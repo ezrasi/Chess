@@ -1,0 +1,1 @@
+/Users/ezrasilverisenstadt/Desktop/CS_Projects/Chess/target/debug/Chess: /Users/ezrasilverisenstadt/Desktop/CS_Projects/Chess/src/board.rs /Users/ezrasilverisenstadt/Desktop/CS_Projects/Chess/src/main.rs
