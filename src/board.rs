@@ -220,7 +220,7 @@ fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
             distance += 7;
         }
     }
-
+    obstructed = false;
     //noEa loop
     if (position < 56) && (position % 8 < 7) {
         distance = 9;
@@ -238,7 +238,7 @@ fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
             distance += 9;
         }
     }
-
+    obstructed = false;
     //soWe loop
     if (position > 7) && (position % 8 > 0) {
         distance = -9;
@@ -256,7 +256,7 @@ fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
             distance -= 9;
         }
     }
-
+    obstructed = false;
     //soEa loop
     if (position > 7) && (position % 8 < 7) {
         distance = -7;
@@ -357,7 +357,12 @@ fn bishop_test() {
 
     let new_moves2 = bishop_moves(&board, 27, false);
     let length2 = new_moves2.len();
-    dbg!({ new_moves2 });
+    // dbg!({ new_moves2 });
+    board.black = (1 << 42) | (1 << 14);
+    let new_moves3 = bishop_moves(&board, 21, true);
+    let length3 = new_moves3.len();
+    dbg!({ new_moves3 });
     assert_eq!(length1, 7);
     assert_eq!(length2, 13);
+    assert_eq!(length3, 8);
 }
