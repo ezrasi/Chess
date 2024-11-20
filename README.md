@@ -1,2 +1,2 @@
 # Chess
-A Chess Engine
+Chess engine in progress ...
