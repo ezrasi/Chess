@@ -1,6 +1,5 @@
 //TODO: revisit whether or not Move needs a color field. if not, clean up all the code that relies on it.
 
-
 const WHITE_PAWN: u8 = 0b00000101;
 const WHITE_KNIGHT: u8 = 0b00001001;
 const WHITE_BISHOP: u8 = 0b00010001;
@@ -42,89 +41,135 @@ pub struct Board {
     pub black_king: u64,
 }
 
-//This function will generate all legal knight moves as a Vec of Moves. It should never be called if the king is already in check 
+//This function will generate all legal knight moves as a Vec of Moves. It should never be called if the king is already in check
 //or if the game should already have ended. It will boundary check and then make sure no same-color piece is on dest square.
-fn knight_moves (board: &Board, position: u8, color: bool) ->Vec<Move>{
-
+fn knight_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
 
     if position > 63 {
         dbg!("knight_moves received invalid position");
-        return moves
+        return moves;
     }
-    
+
     //north jumps
-    if position < 48 {
-        //noEa jumps
-        if position % 8 < 7 {
-            let dest = position + 17;
-            let shifted_dest = 1u64 << dest;
-            let piece = if color {WHITE_KNIGHT} else {BLACK_KNIGHT};
-            let board_color = if color {&board.white} else {&board.black};
-
-                if shifted_dest & board_color == 0 {
-                    let new_move = Move {
-                        piece,
-                        from: position,
-                        to: dest,
-                        color,
-                    };
-
-                    moves.push(new_move);
+    if position < 56 {
+        //north long jumps
+        if position < 48 {
+            //noWe long jumps. Bound check, make sure no piece of same color is on destination square. Add move if all good.
+            if position % 8 > 0 {
+                let new_move = knight_moves_helper(board, position, color, 15);
+                if new_move.is_some() {
+                    moves.push(new_move.unwrap());
                 }
-            
-        }
-        //noWe jumps. Bound check, make sure no piece of same color is on destination square. Add move if all good.
-        if position % 8 > 0 {
-            let dest = position + 15;
-            let shifted_dest = 1u64 << dest;
-            let piece = if color {WHITE_KNIGHT} else {BLACK_KNIGHT};
-            let board_color = if color {&board.white} else {&board.black};
-
-                if shifted_dest & board_color == 0 {
-                    let new_move = Move {
-                        piece,
-                        from: position,
-                        to: dest,
-                        color,
-                    };
-
-                    moves.push(new_move);
+            }
+            //noEa long jumps
+            if position % 8 < 7 {
+                let new_move = knight_moves_helper(board, position, color, 17);
+                if new_move.is_some() {
+                    moves.push(new_move.unwrap());
                 }
             }
         }
-    
+
+         //noWe wide jumps
+         if position % 8 > 1 {
+            let new_move = knight_moves_helper(board, position, color, 6);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+        }
+        //noEA wide jumps
+        if position % 8 < 6 {
+            let new_move = knight_moves_helper(board, position, color, 10);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+        }
+       
+    }
+
+    //south jumps
+    if position > 7 {
+        //soWe wide jumps
+        if position % 8 > 1 {
+            let new_move = knight_moves_helper(board, position, color, -10);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+        }
+        //soEa wide jumps
+        if position % 8 < 6 {
+            let new_move = knight_moves_helper(board, position, color, -6);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+        }
+        //south long jumps
+        if position > 15 {
+            //soWe long jumps
+            if position % 8 > 0 {
+                let new_move = knight_moves_helper(board, position, color, -17);
+                if new_move.is_some() {
+                    moves.push(new_move.unwrap());
+                }
+            }
+            //soEa long jumps
+            if position % 8 < 7 {
+                let new_move = knight_moves_helper(board, position, color, -15);
+                if new_move.is_some() {
+                    moves.push(new_move.unwrap());
+                }
+            }
+        }
+    }
     moves
 }
 
+fn knight_moves_helper(board: &Board, position: u8, color: bool, distance: i8) -> Option<Move> {
+    let dest = position as i8 + distance;
+    debug_assert!(dest >= 0, "dest should never be negative");
+    let dest = dest as u8;
+    let shifted_dest = 1u64 << dest;
+    let piece = if color { WHITE_KNIGHT } else { BLACK_KNIGHT };
+    let board_color = if color { &board.white } else { &board.black };
+
+    if shifted_dest & board_color == 0 {
+        let new_move = Move {
+            piece,
+            from: position,
+            to: dest,
+            color,
+        };
+        return Some(new_move);
+    }
+    None
+}
 
 #[cfg(test)]
+#[test]
+fn noEa_knight_jump() {
+    let board = Board {
+        mailbox: [0; 64], // Optionally, initialize mailbox with empty values
+        white: 0x0000000000000000,
+        black: 0x0000000000000000,
+        white_pawn: 0x000000000000FF00,
+        white_rook: 0x8100000000000000,
+        white_knight: 0x4200000000000000,
+        white_bishop: 0x2400000000000000,
+        white_queen: 0x0800000000000000,
+        white_king: 0x1000000000000000,
+        black_pawn: 0x00FF000000000000,
+        black_rook: 0x0000000000000081,
+        black_knight: 0x0000000000000042,
+        black_bishop: 0x0000000000000024,
+        black_queen: 0x0000000000000008,
+        black_king: 0x0000000000000010,
+    };
 
+    let mut new_moves = knight_moves(&board, 7, true);
+    // new_moves.extend(knight_moves(&board, 5, true));
 
-    #[test]
-    fn noEa_knight_jump() {
-        let board =  Board {
-            mailbox: [0; 64],  // Optionally, initialize mailbox with empty values
-            white: 0,
-            black: 0x0000000000000000,
-            white_pawn: 0x000000000000FF00,
-            white_rook: 0x8100000000000000,
-            white_knight: 0x4200000000000000,
-            white_bishop: 0x2400000000000000,
-            white_queen: 0x0800000000000000,
-            white_king: 0x1000000000000000,
-            black_pawn: 0x00FF000000000000,
-            black_rook: 0x0000000000000081,
-            black_knight: 0x0000000000000042,
-            black_bishop: 0x0000000000000024,
-            black_queen: 0x0000000000000008,
-            black_king: 0x0000000000000010,
-        };
+    dbg!({ new_moves });
 
-        let mut new_moves = knight_moves(&board, 1, true);
-        // new_moves.extend(knight_moves(&board, 5, true));
-        
-        dbg!({new_moves});
-
-        assert_eq!(true, true);
-    }
+    assert_eq!(true, true);
+}
