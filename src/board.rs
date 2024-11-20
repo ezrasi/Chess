@@ -308,8 +308,11 @@ fn rook_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     //west loop
     if position % 8 > 0 {
         distance = -1;
-        //check that it doesn't wrap around or hit anything. >= 0 check needed because % is remainder NOT modulus 
-        while ((position as i8 + distance) >= 0) && (((position as i8 + distance) % 8) < 7) && !obstructed {      
+        //check that it doesn't wrap around or hit anything. >= 0 check needed because % is remainder NOT modulus
+        while ((position as i8 + distance) >= 0)
+            && (((position as i8 + distance) % 8) < 7)
+            && !obstructed
+        {
             let (new_move, is_blocked) =
                 sliding_moves_helper(position, color, distance, piece, board_color, other_color);
             if new_move.is_some() {
@@ -352,6 +355,13 @@ fn rook_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
 
     moves
 }
+
+fn queen_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
+    let mut moves = bishop_moves(board, position, color);
+    moves.extend(rook_moves(board, position, color));
+    moves
+}
+
 fn sliding_moves_helper(
     position: u8,
     color: bool,
@@ -435,7 +445,7 @@ fn bishop_test() {
     board.black = (1 << 42) | (1 << 14);
     let new_moves3 = bishop_moves(&board, 21, true);
     let length3 = new_moves3.len();
-    dbg!({ new_moves3 });
+    // dbg!({ new_moves3 });
     assert_eq!(length1, 7);
     assert_eq!(length2, 13);
     assert_eq!(length3, 8);
@@ -454,8 +464,27 @@ fn rook_test() {
     board.black = (1 << 53) | (1 << 20);
     let new_moves3 = rook_moves(&board, 21, true);
     let length3 = new_moves3.len();
-    dbg!({ new_moves3 });
+    // dbg!({ new_moves3 });
     assert_eq!(length1, 14);
     assert_eq!(length2, 14);
     assert_eq!(length3, 9);
+}
+
+#[test]
+fn queen_test() {
+    let mut board = create_test_board();
+    let new_moves1 = queen_moves(&board, 1, true);
+    let length1 = new_moves1.len();
+    // dbg!({ new_moves1 });
+
+    let new_moves2 = queen_moves(&board, 27, false);
+    let length2 = new_moves2.len();
+    // dbg!({ new_moves2 });
+    board.black = (1 << 53) | (1 << 20) | (1 << 42);
+    let new_moves3 = queen_moves(&board, 21, true);
+    let length3 = new_moves3.len();
+    // dbg!({ new_moves3 });
+    assert_eq!(length1, 21);
+    assert_eq!(length2, 27);
+    assert_eq!(length3, 18);
 }
