@@ -69,20 +69,27 @@ fn knight_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
         return moves;
     }
 
+    //set piece and colors
+    let piece = if color { WHITE_KNIGHT } else { BLACK_KNIGHT };
+    let board_color = if color { &board.white } else { &board.black };
+    let other_color = if color { &board.black } else { &board.white };
+
     //north jumps
     if position < 56 {
         //north long jumps
         if position < 48 {
             //noWe long jumps. Bound check, make sure no piece of same color is on destination square. Add move if all good.
             if position % 8 > 0 {
-                let new_move = knight_moves_helper(board, position, color, 15);
+                let new_move =
+                    knight_moves_helper(position, color, 15, piece, board_color, other_color);
                 if new_move.is_some() {
                     moves.push(new_move.unwrap());
                 }
             }
             //noEa long jumps
             if position % 8 < 7 {
-                let new_move = knight_moves_helper(board, position, color, 17);
+                let new_move =
+                    knight_moves_helper(position, color, 17, piece, board_color, other_color);
                 if new_move.is_some() {
                     moves.push(new_move.unwrap());
                 }
@@ -91,14 +98,15 @@ fn knight_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
 
         //noWe wide jumps
         if position % 8 > 1 {
-            let new_move = knight_moves_helper(board, position, color, 6);
+            let new_move = knight_moves_helper(position, color, 6, piece, board_color, other_color);
             if new_move.is_some() {
                 moves.push(new_move.unwrap());
             }
         }
         //noEA wide jumps
         if position % 8 < 6 {
-            let new_move = knight_moves_helper(board, position, color, 10);
+            let new_move =
+                knight_moves_helper(position, color, 10, piece, board_color, other_color);
             if new_move.is_some() {
                 moves.push(new_move.unwrap());
             }
@@ -109,14 +117,16 @@ fn knight_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     if position > 7 {
         //soWe wide jumps
         if position % 8 > 1 {
-            let new_move = knight_moves_helper(board, position, color, -10);
+            let new_move =
+                knight_moves_helper(position, color, -10, piece, board_color, other_color);
             if new_move.is_some() {
                 moves.push(new_move.unwrap());
             }
         }
         //soEa wide jumps
         if position % 8 < 6 {
-            let new_move = knight_moves_helper(board, position, color, -6);
+            let new_move =
+                knight_moves_helper(position, color, -6, piece, board_color, other_color);
             if new_move.is_some() {
                 moves.push(new_move.unwrap());
             }
@@ -125,14 +135,16 @@ fn knight_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
         if position > 15 {
             //soWe long jumps
             if position % 8 > 0 {
-                let new_move = knight_moves_helper(board, position, color, -17);
+                let new_move =
+                    knight_moves_helper(position, color, -17, piece, board_color, other_color);
                 if new_move.is_some() {
                     moves.push(new_move.unwrap());
                 }
             }
             //soEa long jumps
             if position % 8 < 7 {
-                let new_move = knight_moves_helper(board, position, color, -15);
+                let new_move =
+                    knight_moves_helper(position, color, -15, piece, board_color, other_color);
                 if new_move.is_some() {
                     moves.push(new_move.unwrap());
                 }
@@ -142,19 +154,20 @@ fn knight_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     moves
 }
 
-fn knight_moves_helper(board: &Board, position: u8, color: bool, distance: i8) -> Option<Move> {
+fn knight_moves_helper(
+    position: u8,
+    color: bool,
+    distance: i8,
+    piece: u8,
+    board_color: &u64,
+    other_color: &u64,
+) -> Option<Move> {
     //get destination position
     let dest = position as i8 + distance;
     debug_assert!(dest >= 0, "dest should never be negative");
     let dest = dest as u8;
     //get destination bitmask
     let shifted_dest = 1u64 << dest;
-    //set piece
-    let piece = if color { WHITE_KNIGHT } else { BLACK_KNIGHT };
-    //choose which bitboards to use
-    let board_color = if color { &board.white } else { &board.black };
-    let other_color = if color { &board.black } else { &board.white };
-
     //check for same color piece on destination square
     if shifted_dest & board_color == 0 {
         //set move kind as capture or quiet move
@@ -176,13 +189,138 @@ fn knight_moves_helper(board: &Board, position: u8, color: bool, distance: i8) -
     None
 }
 
-#[cfg(test)]
-#[test]
-fn noEa_knight_jump() {
-    let board = Board {
-        mailbox: [0; 64], // Optionally, initialize mailbox with empty values
-        white: 1 << 17,
-        black: 1 << 10,
+fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+
+    if position > 63 {
+        dbg!("bishop_moves received invalid position");
+        return moves;
+    }
+    //set piece and colors
+    let piece = if color { WHITE_KNIGHT } else { BLACK_KNIGHT };
+    let board_color = if color { &board.white } else { &board.black };
+    let other_color = if color { &board.black } else { &board.white };
+
+
+    let mut obstructed = false;
+    //noWe loop
+    let mut distance: i8 = 7;
+    if (position < 56) && (position % 8 > 0) {
+        //check that it doesn't get too high, wrap around, or hit anything
+        while (position as i8 + distance <= 63)
+            && ((position as i8 + distance) % 8 < 7)
+            && !obstructed
+        {
+            let (new_move, is_blocked) =
+                sliding_moves_helper(position, color, distance, piece, board_color, other_color);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+            obstructed = is_blocked;
+            distance += 7;
+        }
+    }
+
+    //noEa loop
+    if (position < 56) && (position % 8 < 7) {
+        distance = 9;
+         //check that it doesn't get too high, wrap around, or hit anything
+        while (position as i8 + distance <= 63)
+            && ((position as i8 + distance) % 8 > 0)
+            && !obstructed
+        {
+            let (new_move, is_blocked) =
+                sliding_moves_helper(position, color, distance, piece, board_color, other_color);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+            obstructed = is_blocked;
+            distance += 9;
+        }
+    }
+
+    //soWe loop
+    if (position > 7) && (position % 8 > 0) {
+        distance = -9;
+         //check that it doesn't get too high, wrap around, or hit anything
+        while (0 <= position as i8 + distance)
+            && ((position as i8 + distance) % 8 < 7)
+            && !obstructed
+        {
+            let (new_move, is_blocked) =
+                sliding_moves_helper(position, color, distance, piece, board_color, other_color);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+            obstructed = is_blocked;
+            distance -= 9;
+        }
+    }
+
+    //soEa loop
+    if (position > 7) && (position % 8 < 7) {
+        distance = -7;
+         //check that it doesn't get too high, wrap around, or hit anything
+        while (0 <= position as i8 + distance)
+            && ((position as i8 + distance) % 8 > 0)
+            && !obstructed
+        {
+            let (new_move, is_blocked) =
+                sliding_moves_helper(position, color, distance, piece, board_color, other_color);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+            obstructed = is_blocked;
+            distance -= 7;
+        }
+    }
+
+    moves
+}
+
+fn sliding_moves_helper(
+    position: u8,
+    color: bool,
+    distance: i8,
+    piece: u8,
+    board_color: &u64,
+    other_color: &u64,
+) -> (Option<Move>, bool) {
+    //get destination position
+    let dest = position as i8 + distance;
+    debug_assert!(dest >= 0, "dest should never be negative");
+    let dest = dest as u8;
+    //get destination bitmask
+    let shifted_dest = 1u64 << dest;
+
+    let mut obstructed = true;
+    //check for same color piece on destination square
+    if shifted_dest & board_color == 0 {
+        //set move kind as capture or quiet move
+        let kind = if shifted_dest & other_color == 0 {
+            obstructed = false;
+            QUIET_MOVE
+        } else {
+            CAPTURE
+        };
+        //create move and return it
+        let new_move = Move {
+            piece,
+            from: position,
+            to: dest,
+            color,
+            kind,
+        };
+        return (Some(new_move), obstructed);
+    }
+    (None, obstructed)
+}
+
+fn create_test_board() -> Board {
+    Board {
+        mailbox: [0; 64],
+        white: 0,
+        black: 0,
         white_pawn: 0x000000000000FF00,
         white_rook: 0x8100000000000000,
         white_knight: 0x4200000000000000,
@@ -195,12 +333,31 @@ fn noEa_knight_jump() {
         black_bishop: 0x0000000000000024,
         black_queen: 0x0000000000000008,
         black_king: 0x0000000000000010,
-    };
-
+    }
+}
+#[cfg(test)]
+#[test]
+fn knight_jumps() {
+    let board = create_test_board();
     let mut new_moves = knight_moves(&board, 0, true);
     // new_moves.extend(knight_moves(&board, 5, true));
 
-    dbg!({ new_moves });
+    let length = new_moves.len();
+    // dbg!({ new_moves });
 
-    assert_eq!(true, true);
+    assert_eq!(length, 2);
+}
+
+#[test]
+fn bishop_test() {
+    let mut board = create_test_board();
+    let new_moves1 = bishop_moves(&board, 1, true);
+    let length1 = new_moves1.len();
+    // dbg!({ new_moves1 });
+
+    let new_moves2 = bishop_moves(&board, 27, false);
+    let length2 = new_moves2.len();
+    dbg!({ new_moves2 });
+    assert_eq!(length1, 7);
+    assert_eq!(length2, 13);
 }
