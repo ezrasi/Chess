@@ -197,10 +197,9 @@ fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
         return moves;
     }
     //set piece and colors
-    let piece = if color { WHITE_KNIGHT } else { BLACK_KNIGHT };
+    let piece = if color { WHITE_BISHOP } else { BLACK_BISHOP };
     let board_color = if color { &board.white } else { &board.black };
     let other_color = if color { &board.black } else { &board.white };
-
 
     let mut obstructed = false;
     //noWe loop
@@ -224,7 +223,7 @@ fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     //noEa loop
     if (position < 56) && (position % 8 < 7) {
         distance = 9;
-         //check that it doesn't get too high, wrap around, or hit anything
+        //check that it doesn't get too high, wrap around, or hit anything
         while (position as i8 + distance <= 63)
             && ((position as i8 + distance) % 8 > 0)
             && !obstructed
@@ -242,7 +241,7 @@ fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     //soWe loop
     if (position > 7) && (position % 8 > 0) {
         distance = -9;
-         //check that it doesn't get too high, wrap around, or hit anything
+        //check that it doesn't get too high, wrap around, or hit anything
         while (0 <= position as i8 + distance)
             && ((position as i8 + distance) % 8 < 7)
             && !obstructed
@@ -260,7 +259,7 @@ fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     //soEa loop
     if (position > 7) && (position % 8 < 7) {
         distance = -7;
-         //check that it doesn't get too high, wrap around, or hit anything
+        //check that it doesn't get too high, wrap around, or hit anything
         while (0 <= position as i8 + distance)
             && ((position as i8 + distance) % 8 > 0)
             && !obstructed
@@ -278,6 +277,81 @@ fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     moves
 }
 
+fn rook_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+
+    if position > 63 {
+        dbg!("rook_moves received invalid position");
+        return moves;
+    }
+    //set piece and colors
+    let piece = if color { WHITE_ROOK } else { BLACK_ROOK };
+    let board_color = if color { &board.white } else { &board.black };
+    let other_color = if color { &board.black } else { &board.white };
+
+    let mut obstructed = false;
+    //north loop
+    let mut distance: i8 = 8;
+    if position < 56 {
+        //check that it doesn't get too high or hit anything
+        while (position as i8 + distance <= 63) && !obstructed {
+            let (new_move, is_blocked) =
+                sliding_moves_helper(position, color, distance, piece, board_color, other_color);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+            obstructed = is_blocked;
+            distance += 8;
+        }
+    }
+    obstructed = false;
+    //west loop
+    if position % 8 > 0 {
+        distance = -1;
+        //check that it doesn't wrap around or hit anything. >= 0 check needed because % is remainder NOT modulus 
+        while ((position as i8 + distance) >= 0) && (((position as i8 + distance) % 8) < 7) && !obstructed {      
+            let (new_move, is_blocked) =
+                sliding_moves_helper(position, color, distance, piece, board_color, other_color);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+            obstructed = is_blocked;
+            distance -= 1;
+        }
+    }
+    obstructed = false;
+    //east loop
+    if position % 8 < 7 {
+        distance = 1;
+        //check that it doesn't get too high, wrap around, or hit anything
+        while ((position as i8 + distance) % 8 > 0) && !obstructed {
+            let (new_move, is_blocked) =
+                sliding_moves_helper(position, color, distance, piece, board_color, other_color);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+            obstructed = is_blocked;
+            distance += 1;
+        }
+    }
+    obstructed = false;
+    //south loop
+    if position > 7 {
+        distance = -8;
+        //check that it doesn't get too low or hit anything
+        while (0 <= position as i8 + distance) && !obstructed {
+            let (new_move, is_blocked) =
+                sliding_moves_helper(position, color, distance, piece, board_color, other_color);
+            if new_move.is_some() {
+                moves.push(new_move.unwrap());
+            }
+            obstructed = is_blocked;
+            distance -= 8;
+        }
+    }
+
+    moves
+}
 fn sliding_moves_helper(
     position: u8,
     color: bool,
@@ -365,4 +439,23 @@ fn bishop_test() {
     assert_eq!(length1, 7);
     assert_eq!(length2, 13);
     assert_eq!(length3, 8);
+}
+
+#[test]
+fn rook_test() {
+    let mut board = create_test_board();
+    let new_moves1 = rook_moves(&board, 1, true);
+    let length1 = new_moves1.len();
+    // dbg!({ new_moves1 });
+
+    let new_moves2 = rook_moves(&board, 27, false);
+    let length2 = new_moves2.len();
+    // dbg!({ new_moves2 });
+    board.black = (1 << 53) | (1 << 20);
+    let new_moves3 = rook_moves(&board, 21, true);
+    let length3 = new_moves3.len();
+    dbg!({ new_moves3 });
+    assert_eq!(length1, 14);
+    assert_eq!(length2, 14);
+    assert_eq!(length3, 9);
 }
