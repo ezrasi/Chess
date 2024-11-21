@@ -41,7 +41,7 @@ struct Move {
     color: bool,
     kind: u8,
 }
-//One 8x8 mailbox, a bitboard for each color, and a bitboard for each piece
+//The position, side to move, castling rights, en-passant possible
 #[derive(Debug)]
 pub struct Board {
     pub mailbox: [u8; 64],
@@ -59,6 +59,14 @@ pub struct Board {
     pub black_rook: u64,
     pub black_queen: u64,
     pub black_king: u64,
+    pub turn: bool,
+    pub white_kingside_castle: bool,
+    pub white_queenside_castle: bool,
+    pub black_kingside_castle: bool,
+    pub black_queenside_castle: bool,
+    pub ep_target: Option<u8>,
+    pub halfmove: u16,
+    pub fullmove: u16,
 }
 
 //This function will generate all legal knight moves as a Vec of Moves. It should never be called if the king is already in check
@@ -334,7 +342,7 @@ fn queen_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
 //TODO en passant
 fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
-    
+
     debug_assert!(
         position <= 56,
         "pawn_moves received invalid position: {}",
@@ -417,18 +425,17 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
                 moves.push(promote_queen);
             }
         } // end promotion (non-capture)
-        
+
         //noWe capture
         if position % 8 > 0 {
             //noWe promo capture
-            
+
             if (47 < position) && (position < 56) {
                 //set mask for captured square
                 let shifted_dest = 1 << (position + 7);
                 //make sure opposite color piece there
-                
+
                 if (shifted_dest & board.black) == shifted_dest {
-                    
                     let promo_knight_capture = Move {
                         piece,
                         from: position,
@@ -481,67 +488,67 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
             }
         } // end noWe capture
 
-    //noEa capture
-    if position % 8 < 7 {
-        //noEa promo capture
-        if (47 < position) && (position < 56) {
-            //set mask for captured square
-            let shifted_dest = 1 << (position + 9);
-            //make sure opposite color piece there
-            if (shifted_dest & board.black) == shifted_dest {
-                let promo_knight_capture = Move {
-                    piece,
-                    from: position,
-                    to: position + 9,
-                    color,
-                    kind: KNIGHT_PROMO_CAPTURE,
-                };
-                moves.push(promo_knight_capture);
-                let promo_bishop_capture = Move {
-                    piece,
-                    from: position,
-                    to: position + 9,
-                    color,
-                    kind: BISHOP_PROMO_CAPTURE,
-                };
-                moves.push(promo_bishop_capture);
-                let promo_rook_capture = Move {
-                    piece,
-                    from: position,
-                    to: position + 9,
-                    color,
-                    kind: ROOK_PROMO_CAPTURE,
-                };
-                moves.push(promo_rook_capture);
-                let promo_queen_capture = Move {
-                    piece,
-                    from: position,
-                    to: position + 9,
-                    color,
-                    kind: QUEEN_PROMO_CAPTURE,
-                };
-                moves.push(promo_queen_capture);
+        //noEa capture
+        if position % 8 < 7 {
+            //noEa promo capture
+            if (47 < position) && (position < 56) {
+                //set mask for captured square
+                let shifted_dest = 1 << (position + 9);
+                //make sure opposite color piece there
+                if (shifted_dest & board.black) == shifted_dest {
+                    let promo_knight_capture = Move {
+                        piece,
+                        from: position,
+                        to: position + 9,
+                        color,
+                        kind: KNIGHT_PROMO_CAPTURE,
+                    };
+                    moves.push(promo_knight_capture);
+                    let promo_bishop_capture = Move {
+                        piece,
+                        from: position,
+                        to: position + 9,
+                        color,
+                        kind: BISHOP_PROMO_CAPTURE,
+                    };
+                    moves.push(promo_bishop_capture);
+                    let promo_rook_capture = Move {
+                        piece,
+                        from: position,
+                        to: position + 9,
+                        color,
+                        kind: ROOK_PROMO_CAPTURE,
+                    };
+                    moves.push(promo_rook_capture);
+                    let promo_queen_capture = Move {
+                        piece,
+                        from: position,
+                        to: position + 9,
+                        color,
+                        kind: QUEEN_PROMO_CAPTURE,
+                    };
+                    moves.push(promo_queen_capture);
+                }
             }
-        }
-        //non-promo noEa capture
-        else {
-            //set mask for captured square
-            let shifted_dest = 1 << (position + 9);
-            //make sure opposite color piece there
-            if (shifted_dest & board.black) == shifted_dest {
-                let capture = Move {
-                    piece,
-                    from: position,
-                    to: position + 9,
-                    color,
-                    kind: CAPTURE,
-                };
-                moves.push(capture);
+            //non-promo noEa capture
+            else {
+                //set mask for captured square
+                let shifted_dest = 1 << (position + 9);
+                //make sure opposite color piece there
+                if (shifted_dest & board.black) == shifted_dest {
+                    let capture = Move {
+                        piece,
+                        from: position,
+                        to: position + 9,
+                        color,
+                        kind: CAPTURE,
+                    };
+                    moves.push(capture);
+                }
             }
         }
     }
-    } //end white pawn block
-    
+    //end white pawn block
 
     //black pawn
     else {
@@ -594,18 +601,26 @@ fn create_test_board() -> Board {
         mailbox: [0; 64],
         white: 0,
         black: 0,
-        white_pawn: 0x000000000000FF00,
-        white_rook: 0x8100000000000000,
-        white_knight: 0x4200000000000000,
-        white_bishop: 0x2400000000000000,
-        white_queen: 0x0800000000000000,
-        white_king: 0x1000000000000000,
-        black_pawn: 0x00FF000000000000,
-        black_rook: 0x0000000000000081,
-        black_knight: 0x0000000000000042,
-        black_bishop: 0x0000000000000024,
-        black_queen: 0x0000000000000008,
-        black_king: 0x0000000000000010,
+        white_pawn: 0,
+        white_knight: 0,
+        white_bishop: 0,
+        white_rook: 0,
+        white_queen: 0,
+        white_king: 0,
+        black_pawn: 0,
+        black_knight: 0,
+        black_bishop: 0,
+        black_rook: 0,
+        black_queen: 0,
+        black_king: 0,
+        turn: true,
+        white_kingside_castle: true,
+        white_queenside_castle: true,
+        black_kingside_castle: true,
+        black_queenside_castle: true,
+        ep_target: None,
+        halfmove: 0,
+        fullmove: 0,
     }
 }
 #[cfg(test)]
@@ -702,9 +717,26 @@ fn pawn_test() {
     board.black = board.black | (1 << 62);
     let new_moves3 = pawn_moves(&board, 53, true);
     let length3 = new_moves3.len();
-    dbg!({ new_moves3 });
+    // dbg!({ new_moves3 });
+
+    board.white = 1 << 36;
+    let new_moves4 = pawn_moves(&board, 28, true);
+    let length4 = new_moves4.len();
+    // dbg!({ new_moves4 });
+    board.white = 0;
+    board.black = 1 << 36;
+    let new_moves5 = pawn_moves(&board, 28, true);
+    let length5 = new_moves5.len();
+    // dbg!({ new_moves5 });
+    board.black = 0;
+    let new_moves6 = pawn_moves(&board, 28, true);
+    let length6 = new_moves6.len();
+    dbg!({ new_moves6 });
 
     assert_eq!(length1, 4);
     assert_eq!(length2, 8);
-    assert_eq!(length3, 12)
+    assert_eq!(length3, 12);
+    assert_eq!(length4, 0);
+    assert_eq!(length5, 0);
+    assert_eq!(length6, 1);
 }
