@@ -1,6 +1,5 @@
 //TODO: revisit whether or not Move needs a color field. if not, clean up all the code that relies on it.
 
-
 //TODO pawn moves, then in-check function, then king moves, then update all move functions to avoid putting own king in check.
 
 //piece codes
@@ -65,8 +64,6 @@ pub struct Board {
 //This function will generate all legal knight moves as a Vec of Moves. It should never be called if the king is already in check
 //or if the game should already have ended. It will boundary check and then make sure no same-color piece is on dest square.
 fn knight_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
-    
-
     debug_assert!(
         position <= 63,
         "knight_moves received invalid position: {}",
@@ -251,7 +248,6 @@ fn rook_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     );
     let mut moves: Vec<Move> = Vec::new();
 
-    
     //set piece and colors
     let piece = if color { WHITE_ROOK } else { BLACK_ROOK };
     let board_color = if color { &board.white } else { &board.black };
@@ -334,13 +330,11 @@ fn queen_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     moves.extend(rook_moves(board, position, color));
     moves
 }
-        
 
 //TODO en passant
 fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
     
-
     debug_assert!(
         position <= 56,
         "pawn_moves received invalid position: {}",
@@ -350,7 +344,6 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     let piece = if color { WHITE_ROOK } else { BLACK_ROOK };
     //white pawn
     if (color) {
-        
         //north single push (non-promotion)
         if (position < 48) {
             //create mask for one square north
@@ -362,7 +355,7 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
                     from: position,
                     to: position + 8,
                     color,
-                    kind: QUIET_MOVE 
+                    kind: QUIET_MOVE,
                 };
                 moves.push(new_move);
                 //north double push
@@ -376,17 +369,16 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
                             from: position,
                             to: position + 16,
                             color,
-                            kind: QUIET_MOVE 
+                            kind: QUIET_MOVE,
                         };
                         moves.push(new_move);
                     }
                 }
             }
-        }
-            
+        } // end single north push non-promo
+
         //promotion (non-capture)
         if (47 < position) && (position < 56) {
-           
             //create mask for one square north
             let shifted_dest = 1u64 << (position + 8);
             //only add move if square one north is completely empty
@@ -396,7 +388,7 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
                     from: position,
                     to: position + 8,
                     color,
-                    kind: KNIGHT_PROMO 
+                    kind: KNIGHT_PROMO,
                 };
                 moves.push(promote_knight);
                 let promote_bishop = Move {
@@ -404,7 +396,7 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
                     from: position,
                     to: position + 8,
                     color,
-                    kind: BISHOP_PROMO 
+                    kind: BISHOP_PROMO,
                 };
                 moves.push(promote_bishop);
                 let promote_rook = Move {
@@ -412,7 +404,7 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
                     from: position,
                     to: position + 8,
                     color,
-                    kind: ROOK_PROMO 
+                    kind: ROOK_PROMO,
                 };
                 moves.push(promote_rook);
                 let promote_queen = Move {
@@ -420,28 +412,142 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
                     from: position,
                     to: position + 8,
                     color,
-                    kind: QUEEN_PROMO 
+                    kind: QUEEN_PROMO,
                 };
                 moves.push(promote_queen);
-                return moves;
+            }
+        } // end promotion (non-capture)
+        
+        //noWe capture
+        if position % 8 > 0 {
+            //noWe promo capture
+            
+            if (47 < position) && (position < 56) {
+                //set mask for captured square
+                let shifted_dest = 1 << (position + 7);
+                //make sure opposite color piece there
+                
+                if (shifted_dest & board.black) == shifted_dest {
+                    
+                    let promo_knight_capture = Move {
+                        piece,
+                        from: position,
+                        to: position + 7,
+                        color,
+                        kind: KNIGHT_PROMO_CAPTURE,
+                    };
+                    moves.push(promo_knight_capture);
+                    let promo_bishop_capture = Move {
+                        piece,
+                        from: position,
+                        to: position + 7,
+                        color,
+                        kind: BISHOP_PROMO_CAPTURE,
+                    };
+                    moves.push(promo_bishop_capture);
+                    let promo_rook_capture = Move {
+                        piece,
+                        from: position,
+                        to: position + 7,
+                        color,
+                        kind: ROOK_PROMO_CAPTURE,
+                    };
+                    moves.push(promo_rook_capture);
+                    let promo_queen_capture = Move {
+                        piece,
+                        from: position,
+                        to: position + 7,
+                        color,
+                        kind: QUEEN_PROMO_CAPTURE,
+                    };
+                    moves.push(promo_queen_capture);
+                }
+            }
+            //non-promo noWe capture
+            else {
+                //set mask for captured square
+                let shifted_dest = 1 << (position + 7);
+                //make sure opposite color piece there
+                if (shifted_dest & board.black) == shifted_dest {
+                    let capture = Move {
+                        piece,
+                        from: position,
+                        to: position + 7,
+                        color,
+                        kind: CAPTURE,
+                    };
+                    moves.push(capture);
+                }
+            }
+        } // end noWe capture
+
+    //noEa capture
+    if position % 8 < 7 {
+        //noEa promo capture
+        if (47 < position) && (position < 56) {
+            //set mask for captured square
+            let shifted_dest = 1 << (position + 9);
+            //make sure opposite color piece there
+            if (shifted_dest & board.black) == shifted_dest {
+                let promo_knight_capture = Move {
+                    piece,
+                    from: position,
+                    to: position + 9,
+                    color,
+                    kind: KNIGHT_PROMO_CAPTURE,
+                };
+                moves.push(promo_knight_capture);
+                let promo_bishop_capture = Move {
+                    piece,
+                    from: position,
+                    to: position + 9,
+                    color,
+                    kind: BISHOP_PROMO_CAPTURE,
+                };
+                moves.push(promo_bishop_capture);
+                let promo_rook_capture = Move {
+                    piece,
+                    from: position,
+                    to: position + 9,
+                    color,
+                    kind: ROOK_PROMO_CAPTURE,
+                };
+                moves.push(promo_rook_capture);
+                let promo_queen_capture = Move {
+                    piece,
+                    from: position,
+                    to: position + 9,
+                    color,
+                    kind: QUEEN_PROMO_CAPTURE,
+                };
+                moves.push(promo_queen_capture);
             }
         }
-        //noWe capture
-        
-
-        //noEa capture
-            
-
-        } //end white pawn block
-        
+        //non-promo noEa capture
+        else {
+            //set mask for captured square
+            let shifted_dest = 1 << (position + 9);
+            //make sure opposite color piece there
+            if (shifted_dest & board.black) == shifted_dest {
+                let capture = Move {
+                    piece,
+                    from: position,
+                    to: position + 9,
+                    color,
+                    kind: CAPTURE,
+                };
+                moves.push(capture);
+            }
+        }
+    }
+    } //end white pawn block
     
+
     //black pawn
     else {
-        
     }
     moves
 }
-
 
 //This function checks if a potential move is legal. If it is, it creates a Move instance and returns it. If the path is obstructed by either color piece,
 // it sets the obstructed boolean flag to true. If the move is illegal, it returns None.
@@ -587,9 +693,18 @@ fn pawn_test() {
     let mut board = create_test_board();
     let new_moves1 = pawn_moves(&board, 53, true);
     let length1 = new_moves1.len();
-    dbg!({ new_moves1 });
+    // dbg!({ new_moves1 });
+    board.black = 1 << 60;
+    let new_moves2 = pawn_moves(&board, 53, true);
+    let length2 = new_moves2.len();
+    // dbg!({ new_moves2 });
+
+    board.black = board.black | (1 << 62);
+    let new_moves3 = pawn_moves(&board, 53, true);
+    let length3 = new_moves3.len();
+    dbg!({ new_moves3 });
 
     assert_eq!(length1, 4);
-
+    assert_eq!(length2, 8);
+    assert_eq!(length3, 12)
 }
-
