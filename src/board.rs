@@ -1,5 +1,8 @@
 //TODO: revisit whether or not Move needs a color field. if not, clean up all the code that relies on it.
 
+
+//TODO pawn moves, then in-check function, then king moves, then update all move functions to avoid putting own king in check.
+
 //piece codes
 const WHITE_PAWN: u8 = 0b00000101;
 const WHITE_KNIGHT: u8 = 0b00001001;
@@ -62,13 +65,14 @@ pub struct Board {
 //This function will generate all legal knight moves as a Vec of Moves. It should never be called if the king is already in check
 //or if the game should already have ended. It will boundary check and then make sure no same-color piece is on dest square.
 fn knight_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
+    
+
+    debug_assert!(
+        position <= 63,
+        "knight_moves received invalid position: {}",
+        position
+    );
     let mut moves: Vec<Move> = Vec::new();
-
-    if position > 63 {
-        dbg!("knight_moves received invalid position");
-        return moves;
-    }
-
     //set piece and colors
     let piece = if color { WHITE_KNIGHT } else { BLACK_KNIGHT };
     let board_color = if color { &board.white } else { &board.black };
@@ -152,12 +156,12 @@ fn knight_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
 }
 
 fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
+    debug_assert!(
+        position <= 63,
+        "bishop_moves received invalid position: {}",
+        position
+    );
     let mut moves: Vec<Move> = Vec::new();
-
-    if position > 63 {
-        dbg!("bishop_moves received invalid position");
-        return moves;
-    }
     //set piece and colors
     let piece = if color { WHITE_BISHOP } else { BLACK_BISHOP };
     let board_color = if color { &board.white } else { &board.black };
@@ -240,12 +244,14 @@ fn bishop_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
 }
 
 fn rook_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
+    debug_assert!(
+        position <= 63,
+        "rook_moves received invalid position: {}",
+        position
+    );
     let mut moves: Vec<Move> = Vec::new();
 
-    if position > 63 {
-        dbg!("rook_moves received invalid position");
-        return moves;
-    }
+    
     //set piece and colors
     let piece = if color { WHITE_ROOK } else { BLACK_ROOK };
     let board_color = if color { &board.white } else { &board.black };
@@ -319,11 +325,126 @@ fn rook_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
 }
 
 fn queen_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
+    debug_assert!(
+        position <= 63,
+        "queen_moves received invalid position: {}",
+        position
+    );
     let mut moves = bishop_moves(board, position, color);
     moves.extend(rook_moves(board, position, color));
     moves
 }
+        
 
+//TODO en passant
+fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+    
+
+    debug_assert!(
+        position <= 56,
+        "pawn_moves received invalid position: {}",
+        position
+    );
+
+    let piece = if color { WHITE_ROOK } else { BLACK_ROOK };
+    //white pawn
+    if (color) {
+        
+        //north single push (non-promotion)
+        if (position < 48) {
+            //create mask for one square north
+            let shifted_dest = 1u64 << (position + 8);
+            //only add move if square one north is completely empty
+            if shifted_dest & (board.black | board.white) == 0 {
+                let new_move = Move {
+                    piece,
+                    from: position,
+                    to: position + 8,
+                    color,
+                    kind: QUIET_MOVE 
+                };
+                moves.push(new_move);
+                //north double push
+                if (position < 16) {
+                    //mask for two squares north
+                    let shifted_dest = 1u64 << (position + 16);
+                    //only add move if two squares north is empty (already confirmed one square north was empty)
+                    if shifted_dest & (board.black | board.white) == 0 {
+                        let new_move = Move {
+                            piece,
+                            from: position,
+                            to: position + 16,
+                            color,
+                            kind: QUIET_MOVE 
+                        };
+                        moves.push(new_move);
+                    }
+                }
+            }
+        }
+            
+        //promotion (non-capture)
+        if (47 < position) && (position < 56) {
+           
+            //create mask for one square north
+            let shifted_dest = 1u64 << (position + 8);
+            //only add move if square one north is completely empty
+            if shifted_dest & (board.black | board.white) == 0 {
+                let promote_knight = Move {
+                    piece,
+                    from: position,
+                    to: position + 8,
+                    color,
+                    kind: KNIGHT_PROMO 
+                };
+                moves.push(promote_knight);
+                let promote_bishop = Move {
+                    piece,
+                    from: position,
+                    to: position + 8,
+                    color,
+                    kind: BISHOP_PROMO 
+                };
+                moves.push(promote_bishop);
+                let promote_rook = Move {
+                    piece,
+                    from: position,
+                    to: position + 8,
+                    color,
+                    kind: ROOK_PROMO 
+                };
+                moves.push(promote_rook);
+                let promote_queen = Move {
+                    piece,
+                    from: position,
+                    to: position + 8,
+                    color,
+                    kind: QUEEN_PROMO 
+                };
+                moves.push(promote_queen);
+                return moves;
+            }
+        }
+        //noWe capture
+        
+
+        //noEa capture
+            
+
+        } //end white pawn block
+        
+    
+    //black pawn
+    else {
+        
+    }
+    moves
+}
+
+
+//This function checks if a potential move is legal. If it is, it creates a Move instance and returns it. If the path is obstructed by either color piece,
+// it sets the obstructed boolean flag to true. If the move is illegal, it returns None.
 fn move_helper(
     position: u8,
     color: bool,
@@ -460,3 +581,15 @@ fn queen_test() {
     assert_eq!(length2, 25);
     assert_eq!(length3, 18);
 }
+
+#[test]
+fn pawn_test() {
+    let mut board = create_test_board();
+    let new_moves1 = pawn_moves(&board, 53, true);
+    let length1 = new_moves1.len();
+    dbg!({ new_moves1 });
+
+    assert_eq!(length1, 4);
+
+}
+
