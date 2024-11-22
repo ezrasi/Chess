@@ -7,7 +7,7 @@
 // light squares      0x55AA55AA55AA55AA
 // dark squares       0xAA55AA55AA55AA55
 
-//constant masks
+//file masks
 const a_file: u64 = 0x0101010101010101;
 const b_file: u64 = 0x0202020202020202;
 const c_file: u64 = 0x0404040404040404;
@@ -17,6 +17,7 @@ const f_file: u64 = 0x2020202020202020;
 const g_file: u64 = 0x4040404040404040;
 const h_file: u64 = 0x8080808080808080;
 
+//rank masks
 const first_rank: u64 = 0x00000000000000FF;
 const second_rank: u64 = 0x000000000000FF00;
 const third_rank: u64 = 0x0000000000FF0000;
@@ -26,6 +27,7 @@ const sixth_rank: u64 = 0x0000FF0000000000;
 const seventh_rank: u64 = 0x00FF000000000000;
 const eighth_rank: u64 = 0xFF00000000000000;
 
+//piece move masks
 const knight_move_masks: [u64; 64] = [
     132096,
     329728,
@@ -92,7 +94,6 @@ const knight_move_masks: [u64; 64] = [
     4679521487814656,
     9077567998918656,
 ];
-
 const bishop_move_masks: [u64; 64] = [
     9241421688590303744,
     36099303471056128,
@@ -159,7 +160,6 @@ const bishop_move_masks: [u64; 64] = [
     45053622886727936,
     18049651735527937,
 ];
-
 const rook_move_masks: [u64; 64] = [
     72340172838076926,
     144680345676153597,
@@ -226,7 +226,6 @@ const rook_move_masks: [u64; 64] = [
     13781085504453754944,
     9187484529235886208,
 ];
-
 const queen_move_masks: [u64; 64] = [
     9313761861428380670,
     180779649147209725,
@@ -294,19 +293,15 @@ const queen_move_masks: [u64; 64] = [
     9205534180971414145,
 ];
 
-
-fn queen_moves() -> Vec<u64> {
-    let mut moves: Vec<u64> = Vec::new();
-
-    for i in 0..64 {
-        let mask = bishop_move_masks[i] | rook_move_masks[i];
-        moves.push(mask);
-    }
-
-    moves
-}
-
-
+//move mask generators
+// fn queen_moves() -> Vec<u64> {
+//     let mut moves: Vec<u64> = Vec::new();
+//     for i in 0..64 {
+//         let mask = bishop_move_masks[i] | rook_move_masks[i];
+//         moves.push(mask);
+//     }
+//     moves
+// }
 // fn rook_moves() -> Vec<u64> {
 //     let mut moves: Vec<u64> = Vec::new();
 //     let mut mask: u64;
@@ -353,7 +348,6 @@ fn queen_moves() -> Vec<u64> {
 //     }
 //     moves
 // }
-
 // fn bishop_moves() -> Vec<u64> {
 //         let mut moves: Vec<u64> = Vec::new();
 //         let mut mask: u64;
@@ -407,7 +401,6 @@ fn queen_moves() -> Vec<u64> {
 //     }
 //     moves
 // }
-
 // fn knight_moves_generator() ->Vec<u64> {
 //     let mut moves: Vec<u64> = Vec::new();
 //     let mut mask: u64;
@@ -461,7 +454,7 @@ fn queen_moves() -> Vec<u64> {
 //     moves
 // }
 
-#[cfg(test)]
+// #[cfg(test)]
 // #[test]
 // fn masks() {
 //     let list = knight_moves();
@@ -474,19 +467,17 @@ fn queen_moves() -> Vec<u64> {
 //     println!("{:#?}", list);
 //     assert_eq!(1, 0);
 // }
-
 // #[test]
 // fn rook_masks() {
 //     let list = rook_moves();
 //     println!("{:#?}", list);
 //     assert_eq!(1, 0);
 // }
-
-#[test]
-fn queen_masks() {
-    let list = queen_moves();
-    println!("{:#?}", list);
-    assert_eq!(1, 0);
-}
+// #[test]
+// fn queen_masks() {
+//     let list = queen_moves();
+//     println!("{:#?}", list);
+//     assert_eq!(1, 0);
+// }
 
 
