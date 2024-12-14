@@ -1,3 +1,5 @@
+use crate::{board, BLACK_BISHOP, BLACK_KNIGHT, WHITE_BISHOP};
+
 // a-file             0x0101010101010101
 // h-file             0x8080808080808080
 // 1st rank           0x00000000000000FF
@@ -6,6 +8,7 @@
 // h1-a8 antidiagonal 0x0102040810204080
 // light squares      0x55AA55AA55AA55AA
 // dark squares       0xAA55AA55AA55AA55
+
 
 //file masks
 const a_file: u64 = 0x0101010101010101;
@@ -359,44 +362,95 @@ const king_move_masks: [u64; 64] = [
     4665729213955833856,
 ];
 
-
-fn king_moves() -> Vec<u64> {
-    let mut moves: Vec<u64> = Vec::new();
-    for position in 0..64 {
-        let mut mask: u64 = 0;
-        //north moves
-        if position < 56 {
-            mask |= 1 << (position + 8);
-            if position % 8 > 0 {
-                mask |= 1 << (position + 7);
-            }
-            if position % 8 < 7 {
-                mask |= 1 << (position + 9);
-            }
+//this function returns a vec of all the on bit positions. e.g. 9 -> [0, 3]
+fn set_bit_positions(mut number: u64) -> Vec<u8> {
+    let mut result: Vec<u8> = Vec::new();
+    for i in 0..63 {
+        if ((number & 1) == 1) {
+            result.push(i);
         }
-        //lateral moves
-        if position % 8 > 0 {
-            mask |= 1 << (position - 1);
-        }
-        if position % 8 < 7 {
-            mask |= 1 << (position + 1);
-        }
-        //south moves
-        if position > 7 {
-            mask |= 1 << (position - 8);
-
-            if position % 8 > 0 {
-                mask |= 1 << (position - 9);
-            }
-
-            if position % 8 < 7 {
-                mask |= 1 << (position - 7);
-            }
-        }
-        moves.push(mask);
+        number = number >> 1;
     }
-    moves
+    result
 }
+
+fn blockers(piece: u8, position: usize) -> Vec<u64> {
+    let mask: u64;
+    match piece {
+        crate::WHITE_KNIGHT | crate::BLACK_KNIGHT => {
+            mask = knight_move_masks[position];
+        }
+
+        crate::WHITE_BISHOP | crate::BLACK_BISHOP => {
+            mask = bishop_move_masks[position];
+        }
+
+        crate::WHITE_ROOK | crate::BLACK_ROOK => {
+            mask = rook_move_masks[position]
+        }
+
+        _ => {
+            println!("finish implementing blockers for knights etc");
+            mask = 0;
+        }
+    }
+
+    // A list of the on-bit positions in the move mask
+    let on_bits = set_bit_positions(mask);
+
+    fn blockers_helper(mut list: Vec<u8>, acc: u64) -> Vec<u64> {
+        match list.as_slice() {
+            [] => {
+                vec![acc]
+            }
+            _ => {
+                let bit_set = 1 << list[0];
+                let with_my_contribution = acc | bit_set;
+                let (head, tail) = list.split_at(1);
+                let mut result = blockers_helper(tail.to_vec(), with_my_contribution);
+                result.extend(blockers_helper(tail.to_vec(), acc));
+                result
+            }
+        }
+    }
+
+    blockers_helper(on_bits, 0)
+}
+// fn king_moves() -> Vec<u64> {
+//     let mut moves: Vec<u64> = Vec::new();
+//     for position in 0..64 {
+//         let mut mask: u64 = 0;
+//         //north moves
+//         if position < 56 {
+//             mask |= 1 << (position + 8);
+//             if position % 8 > 0 {
+//                 mask |= 1 << (position + 7);
+//             }
+//             if position % 8 < 7 {
+//                 mask |= 1 << (position + 9);
+//             }
+//         }
+//         //lateral moves
+//         if position % 8 > 0 {
+//             mask |= 1 << (position - 1);
+//         }
+//         if position % 8 < 7 {
+//             mask |= 1 << (position + 1);
+//         }
+//         //south moves
+//         if position > 7 {
+//             mask |= 1 << (position - 8);
+//             if position % 8 > 0 {
+//                 mask |= 1 << (position - 9);
+//             }
+//             if position % 8 < 7 {
+//                 mask |= 1 << (position - 7);
+//             }
+//         }
+//         moves.push(mask);
+//     }
+//     moves
+// }
 //move mask generators
 // fn queen_moves() -> Vec<u64> {
 //     let mut moves: Vec<u64> = Vec::new();
@@ -559,6 +613,45 @@ fn king_moves() -> Vec<u64> {
 // }
 
 #[cfg(test)]
+
+    #[test]
+    fn blocker_list() {
+        use crate::{WHITE_KNIGHT, WHITE_ROOK};
+        let mut positions = set_bit_positions(144680345676153597);
+        let mut blocks = blockers(WHITE_ROOK, 1);
+
+        for elem in &blocks {
+            
+            if elem & !rook_move_masks[1] != 0 {
+                assert!(false, "Some blocker had 1 bits outside of the rook's move mask");
+            }
+        }
+        // println!("blockers: {:#?}", blockers);
+        // println!("the numbuh of blockuhs: {}", blocks.len());
+        assert_eq!(blocks.len() as u32, 2u32.pow(14));
+
+        positions = set_bit_positions(knight_move_masks[20]);
+        blocks = blockers(WHITE_KNIGHT, 20);
+
+        for elem in &blocks {
+            
+            if elem & !knight_move_masks[20] != 0 {
+                assert!(false, "Some blocker had 1 bits outside of the knights's move mask");
+            }
+        }
+        println!("blockers: {:#?}", blocks);
+        println!("the numbuh of blockuhs: {}", blocks.len());
+        assert_eq!(blocks.len() as u32, 2u32.pow(8));
+
+
+    }
+    // #[test]
+    // fn positions() {
+    //     let list = set_bit_positions(9,);
+    //     println!("{:#?}", list);
+    //     assert_eq!(1, 1);
+    // }
+
 // #[test]
 // fn masks() {
 //     let list = knight_moves();
@@ -583,12 +676,11 @@ fn king_moves() -> Vec<u64> {
 //     println!("{:#?}", list);
 //     assert_eq!(1, 0);
 // }
-#[test]
-fn king_masks() {
-    let list = king_moves();
-    println!("{:#?}", list);
-    assert_eq!(1, 0);
-}
-
+// #[test]
+// fn king_masks() {
+//     let list = king_moves();
+//     println!("{:#?}", list);
+//     assert_eq!(1, 0);
+// }
 
 //TODO: when generating attack masks from occupancy masks, reuse board.rs code but make all obstructions the other color.

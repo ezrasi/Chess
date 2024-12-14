@@ -3,18 +3,18 @@
 // can reuse mailbox move generation cod (with modification) to build attack masks from occupancy masks
 
 //piece codes
-const WHITE_PAWN: u8 = 0b00000101;
-const WHITE_KNIGHT: u8 = 0b00001001;
-const WHITE_BISHOP: u8 = 0b00010001;
-const WHITE_ROOK: u8 = 0b00100001;
-const WHITE_QUEEN: u8 = 0b01000001;
-const WHITE_KING: u8 = 0b10000001;
-const BLACK_PAWN: u8 = 0b00000110;
-const BLACK_KNIGHT: u8 = 0b00001010;
-const BLACK_BISHOP: u8 = 0b00010010;
-const BLACK_ROOK: u8 = 0b00100010;
-const BLACK_QUEEN: u8 = 0b01000010;
-const BLACK_KING: u8 = 0b10000010;
+pub const WHITE_PAWN: u8 = 0b00000101;
+pub const WHITE_KNIGHT: u8 = 0b00001001;
+pub const WHITE_BISHOP: u8 = 0b00010001;
+pub const WHITE_ROOK: u8 = 0b00100001;
+pub const WHITE_QUEEN: u8 = 0b01000001;
+pub const WHITE_KING: u8 = 0b10000001;
+pub const BLACK_PAWN: u8 = 0b00000110;
+pub const BLACK_KNIGHT: u8 = 0b00001010;
+pub const BLACK_BISHOP: u8 = 0b00010010;
+pub const BLACK_ROOK: u8 = 0b00100010;
+pub const BLACK_QUEEN: u8 = 0b01000010;
+pub const BLACK_KING: u8 = 0b10000010;
 
 //special move codes
 const QUIET_MOVE: u8 = 0b0000;
