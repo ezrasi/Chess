@@ -1,4 +1,4 @@
-# Ike: A Chess Engine
+# Ike: A Chess Engine (in progress)
 
 ---
 
