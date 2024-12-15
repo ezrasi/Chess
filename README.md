@@ -1,2 +1,3 @@
-# Chess
-Chess engine in progress ...
+# Ike: A Chess Engine
+
+---
