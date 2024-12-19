@@ -593,11 +593,13 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
 
 
 
-// Generates all legal rook moves for all blocker configs given a position 
-fn rook_moves(position: u8) -> Vec<u64> {
+// Generates all legal rook moves for all blocker configs given a position, returning blockers too
+// for testing
+fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
     let mut moves: Vec<u64> = Vec::new();
     let mut mask: u64;
     let blockers = blockers(crate::WHITE_ROOK, position as usize);
+    let blockers_clone = blockers.clone(); // FOR TESTING ONLY
     for blocked in blockers {
         mask = 0;
 
@@ -608,10 +610,10 @@ fn rook_moves(position: u8) -> Vec<u64> {
             //check that it doesn't get too high or hit anything
             while (position as i8 + distance <= 63 && !obstructed){
                 mask |= 1 << (position as i8 + distance);
-                distance += 8;
                 if blocked & (1 << (position as i8 + distance)) != 0 {
                     obstructed = true;
                 }
+                distance += 8;
             }
         }
 
@@ -625,10 +627,10 @@ fn rook_moves(position: u8) -> Vec<u64> {
                 && !obstructed)
             {
                 mask |= 1 << (position as i8 + distance);
-                distance -= 1;
                 if blocked & (1 << (position as i8 + distance)) != 0 {
                     obstructed = true;
                 }
+                distance -= 1;
             }
         }
 
@@ -639,10 +641,10 @@ fn rook_moves(position: u8) -> Vec<u64> {
             //check that it doesn't get too high, wrap around, or hit anything
             while ((position as i8 + distance) % 8 > 0 && !obstructed)  {
                 mask |= 1 << (position as i8 + distance);
-                distance += 1;
                 if blocked & (1 << (position as i8 + distance)) != 0 {
                     obstructed = true;
                 }
+                distance += 1;
             }
         }
 
@@ -653,15 +655,15 @@ fn rook_moves(position: u8) -> Vec<u64> {
             //check that it doesn't get too low or hit anything
             while (0 <= position as i8 + distance && !obstructed){
                 mask |= 1 << (position as i8+ distance);
-                distance -= 8;
                 if blocked & (1 << (position as i8 + distance)) != 0 {
                     obstructed = true;
                 }
+                distance -= 8;
             }
         }
         moves.push(mask);
     }
-    moves
+(blockers_clone,moves)
 }
 
 // fn bishop_moves() -> Vec<u64> {
@@ -787,14 +789,72 @@ fn rook_moves(position: u8) -> Vec<u64> {
 
 
 
+fn print_binary_board(value: u64) {
+     let binary_string = format!("{:064b}", value); // Convert to a 64-bit binary string
+    let reversed_binary_string: String = binary_string.chars().rev().collect(); // Reverse the entire string
 
-
-
+    // Print chunks in reverse order directly
+    reversed_binary_string.as_bytes().chunks(8).rev().for_each(|chunk| {
+        println!("{}", std::str::from_utf8(chunk).unwrap());
+    });
+}
 
 
 
 
 #[cfg(test)]
+
+#[test]
+fn rook_legal_bitboards() {
+    // For position 0
+    let (blockers, legals) = rook_moves(0);
+
+    println!("POSITION 0: ");
+
+    println!("Blocker 0: ");
+    print_binary_board(blockers[0]);
+    println!("Legal 0:");
+    print_binary_board(legals[0]);
+
+    println!("Blocker 300: ");
+    print_binary_board(blockers[300]);
+    println!("Legal 300:");
+    print_binary_board(legals[300]);
+    
+    println!("Blocker 2051: ");
+    print_binary_board(blockers[2051]);
+    println!("Legal 2051:");
+    print_binary_board(legals[2051]);
+
+    println!("Blocker 4003: ");
+    print_binary_board(blockers[4003]);
+    println!("Legal 4003:");
+    print_binary_board(legals[4003]);
+
+    // For position 27
+    let (blockers, legals) = rook_moves(27);
+    println!("POSITION 27: ");
+
+    println!("Blocker 1: ");
+    print_binary_board(blockers[1]);
+    println!("Legal 1:");
+    print_binary_board(legals[1]);
+
+    println!("Blocker 451: ");
+    print_binary_board(blockers[451]);
+    println!("Legal 451:");
+    print_binary_board(legals[451]);
+
+    println!("Blocker 713: ");
+    print_binary_board(blockers[713]);
+    println!("Legal 713:");
+    print_binary_board(legals[713]);
+    
+    println!("Blocker 1010: ");
+    print_binary_board(blockers[1010]);
+    println!("Legal 1010:");
+    print_binary_board(legals[1010]);
+}
 
 #[test]
 fn mask() {
