@@ -1,0 +1,4 @@
+12/19/24: 
+    Test the rook_moves function to make sure it creates the correct legal move bitboards for each blocker configuration
+
+

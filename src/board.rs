@@ -2,6 +2,8 @@
 
 // can reuse mailbox move generation cod (with modification) to build attack masks from occupancy masks
 
+
+//true = white and false = black. This enables the ! operator for opposite color.
 //piece codes
 pub const WHITE_PAWN: u8 = 0b00000101;
 pub const WHITE_KNIGHT: u8 = 0b00001001;
@@ -15,6 +17,7 @@ pub const BLACK_BISHOP: u8 = 0b00010010;
 pub const BLACK_ROOK: u8 = 0b00100010;
 pub const BLACK_QUEEN: u8 = 0b01000010;
 pub const BLACK_KING: u8 = 0b10000010;
+
 
 //special move codes
 const QUIET_MOVE: u8 = 0b0000;
@@ -32,7 +35,8 @@ const BISHOP_PROMO_CAPTURE: u8 = 0b1101;
 const ROOK_PROMO_CAPTURE: u8 = 0b1110;
 const QUEEN_PROMO_CAPTURE: u8 = 0b1111;
 
-//true = white and false = black. This enables the ! operator for opposite color.
+
+// The Move representation
 #[derive(Debug)]
 struct Move {
     piece: u8,
@@ -41,7 +45,8 @@ struct Move {
     color: bool,
     kind: u8,
 }
-//The position, side to move, castling rights, en-passant possible
+
+// The Board representation.
 #[derive(Debug)]
 pub struct Board {
     pub mailbox: [u8; 64],

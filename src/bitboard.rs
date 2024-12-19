@@ -1,4 +1,6 @@
-use crate::{board, BLACK_BISHOP, BLACK_KNIGHT, WHITE_BISHOP};
+use crate::{board, Board, BLACK_BISHOP, BLACK_KNIGHT, WHITE_BISHOP};
+use std::fs::OpenOptions;
+use std::io::Write;
 
 // a-file             0x0101010101010101
 // h-file             0x8080808080808080
@@ -9,29 +11,32 @@ use crate::{board, BLACK_BISHOP, BLACK_KNIGHT, WHITE_BISHOP};
 // light squares      0x55AA55AA55AA55AA
 // dark squares       0xAA55AA55AA55AA55
 
+//define the edge
+const EDGE_MASK: u64 = 18411139144890810879;
 
+//rank and file masks
 //file masks
-const a_file: u64 = 0x0101010101010101;
-const b_file: u64 = 0x0202020202020202;
-const c_file: u64 = 0x0404040404040404;
-const d_file: u64 = 0x0808080808080808;
-const e_file: u64 = 0x1010101010101010;
-const f_file: u64 = 0x2020202020202020;
-const g_file: u64 = 0x4040404040404040;
-const h_file: u64 = 0x8080808080808080;
+const A_FILE: u64 = 0x0101010101010101;
+const B_FILE: u64 = 0x0202020202020202;
+const C_FILE: u64 = 0x0404040404040404;
+const D_FILE: u64 = 0x0808080808080808;
+const E_FILE: u64 = 0x1010101010101010;
+const F_FILE: u64 = 0x2020202020202020;
+const G_FILE: u64 = 0x4040404040404040;
+const H_FILE: u64 = 0x8080808080808080;
 
 //rank masks
-const first_rank: u64 = 0x00000000000000FF;
-const second_rank: u64 = 0x000000000000FF00;
-const third_rank: u64 = 0x0000000000FF0000;
-const fourth_rank: u64 = 0x00000000FF000000;
-const fifth_rank: u64 = 0x000000FF00000000;
-const sixth_rank: u64 = 0x0000FF0000000000;
-const seventh_rank: u64 = 0x00FF000000000000;
-const eighth_rank: u64 = 0xFF00000000000000;
+const FIRST_RANK: u64 = 0x00000000000000FF;
+const SECOND_RANK: u64 = 0x000000000000FF00;
+const THIRD_RANK: u64 = 0x0000000000FF0000;
+const FOURTH_RANK: u64 = 0x00000000FF000000;
+const FIFTH_RANK: u64 = 0x000000FF00000000;
+const SIXTH_RANK: u64 = 0x0000FF0000000000;
+const SEVENTH_RANK: u64 = 0x00FF000000000000;
+const EIGHTH_RANK: u64 = 0xFF00000000000000;
 
 //piece move masks
-const knight_move_masks: [u64; 64] = [
+const KNIGHT_MOVE_MASKS: [u64; 64] = [
     132096,
     329728,
     659712,
@@ -97,7 +102,7 @@ const knight_move_masks: [u64; 64] = [
     4679521487814656,
     9077567998918656,
 ];
-const bishop_move_masks: [u64; 64] = [
+const BISHOP_MOVE_MASKS: [u64; 64] = [
     9241421688590303744,
     36099303471056128,
     141012904249856,
@@ -163,7 +168,7 @@ const bishop_move_masks: [u64; 64] = [
     45053622886727936,
     18049651735527937,
 ];
-const rook_move_masks: [u64; 64] = [
+const ROOK_MOVE_MASKS: [u64; 64] = [
     72340172838076926,
     144680345676153597,
     289360691352306939,
@@ -229,7 +234,7 @@ const rook_move_masks: [u64; 64] = [
     13781085504453754944,
     9187484529235886208,
 ];
-const queen_move_masks: [u64; 64] = [
+const QUEEN_MOVE_MASKS: [u64; 64] = [
     9313761861428380670,
     180779649147209725,
     289501704256556795,
@@ -295,7 +300,7 @@ const queen_move_masks: [u64; 64] = [
     13826139127340482880,
     9205534180971414145,
 ];
-const king_move_masks: [u64; 64] = [
+const KING_MOVE_MASKS: [u64; 64] = [
     770,
     1797,
     3594,
@@ -362,11 +367,122 @@ const king_move_masks: [u64; 64] = [
     4665729213955833856,
 ];
 
-//this function returns a vec of all the on bit positions. e.g. 9 -> [0, 3]
+// This function takes in a vector and appends it to a specified file (currently hardcoded)
+fn append_vector_to_file(vector: &[Vec<u64>]) -> std::io::Result<()> {
+    let mut file = OpenOptions::new()
+        .write(true) // Open the file with write access
+        .append(true) // Append to the file instead of overwriting
+        .create(true) // Create the file if it doesn't exist
+        .open("src/attacks.rs")?; // Open the file
+
+    writeln!(file, "pub static DATA: &[u64] = &{:?};", vector)?;
+    Ok(())
+}
+
+// Saves to a file a list of all the blocking configs for a piece and position. each of these * a
+// magic number will map to one of the actual attack maps
+fn sliding_attacks(piece: u8, position: usize) -> () {
+    let mut result: Vec<Vec<u64>> = Vec::new();
+
+    //loop through each of the positions
+    // for i in 0..64 {
+
+    // }
+    let mut blocks = blockers(crate::WHITE_ROOK, 0);
+
+    result.push(blocks);
+    blocks = blockers(crate::WHITE_ROOK, 1);
+    result.push(blocks);
+    append_vector_to_file(result.as_slice());
+}
+
+// fn rook_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
+//     debug_assert!(
+//         position <= 63,
+//         "rook_moves received invalid position: {}",
+//         position
+//     );
+//     let mut moves: Vec<Move> = Vec::new();
+
+//     //set piece and colors
+//     let piece = if color { WHITE_ROOK } else { BLACK_ROOK };
+//     let board_color = if color { &board.white } else { &board.black };
+//     let other_color = if color { &board.black } else { &board.white };
+
+//     let mut obstructed = false;
+//     //north loop
+//     let mut distance: i8 = 8;
+//     if position < 56 {
+//         //check that it doesn't get too high or hit anything
+//         while (position as i8 + distance <= 63) && !obstructed {
+//             let (new_move, is_blocked) =
+//                 move_helper(position, color, distance, piece, board_color, other_color);
+//             if new_move.is_some() {
+//                 moves.push(new_move.unwrap());
+//             }
+//             obstructed = is_blocked;
+//             distance += 8;
+//         }
+//     }
+//     obstructed = false;
+//     //west loop
+//     if position % 8 > 0 {
+//         distance = -1;
+//         //check that it doesn't wrap around or hit anything. >= 0 check needed because % is remainder NOT modulus
+//         while ((position as i8 + distance) >= 0)
+//             && (((position as i8 + distance) % 8) < 7)
+//             && !obstructed
+//         {
+//             let (new_move, is_blocked) =
+//                 move_helper(position, color, distance, piece, board_color, other_color);
+//             if new_move.is_some() {
+//                 moves.push(new_move.unwrap());
+//             }
+//             obstructed = is_blocked;
+//             distance -= 1;
+//         }
+//     }
+//     obstructed = false;
+//     //east loop
+//     if position % 8 < 7 {
+//         distance = 1;
+//         //check that it doesn't get too high, wrap around, or hit anything
+//         while ((position as i8 + distance) % 8 > 0) && !obstructed {
+//             let (new_move, is_blocked) =
+//                 move_helper(position, color, distance, piece, board_color, other_color);
+//             if new_move.is_some() {
+//                 moves.push(new_move.unwrap());
+//             }
+//             obstructed = is_blocked;
+//             distance += 1;
+//         }
+//     }
+//     obstructed = false;
+//     //south loop
+//     if position > 7 {
+//         distance = -8;
+//         //check that it doesn't get too low or hit anything
+//         while (0 <= position as i8 + distance) && !obstructed {
+//             let (new_move, is_blocked) =
+//                 move_helper(position, color, distance, piece, board_color, other_color);
+//             if new_move.is_some() {
+//                 moves.push(new_move.unwrap());
+//             }
+//             obstructed = is_blocked;
+//             distance -= 8;
+//         }
+//     }
+
+//     moves
+// }
+
+// This function returns a vec of all the on bit positions. e.g. 9 -> [0, 3]
+
+// This function takes in a u64 and outputs a Vec of the indeces of the on bits
 fn set_bit_positions(mut number: u64) -> Vec<u8> {
     let mut result: Vec<u8> = Vec::new();
     for i in 0..63 {
-        if ((number & 1) == 1) {
+        if (number & 1) == 1 {
             result.push(i);
         }
         number = number >> 1;
@@ -374,31 +490,44 @@ fn set_bit_positions(mut number: u64) -> Vec<u8> {
     result
 }
 
+// This function generates a big list of all the possible blocker configurations for a given piece and square
 fn blockers(piece: u8, position: usize) -> Vec<u64> {
-    let mask: u64;
+    let mut mask: u64;
     match piece {
-        crate::WHITE_KNIGHT | crate::BLACK_KNIGHT => {
-            mask = knight_move_masks[position];
-        }
 
         crate::WHITE_BISHOP | crate::BLACK_BISHOP => {
-            mask = bishop_move_masks[position];
+            mask = BISHOP_MOVE_MASKS[position];
         }
 
-        crate::WHITE_ROOK | crate::BLACK_ROOK => {
-            mask = rook_move_masks[position]
-        }
+        crate::WHITE_ROOK | crate::BLACK_ROOK => { mask = ROOK_MOVE_MASKS[position]; }
 
-        _ => {
-            println!("finish implementing blockers for knights etc");
-            mask = 0;
-        }
+        crate::WHITE_QUEEN | crate::BLACK_QUEEN => { mask = QUEEN_MOVE_MASKS[position]; }
+
+        _ => panic!("blockers didn't receive sliding piece")
+    }
+
+    // Get rid of the appropriate edges for the blocker mask
+    if position < 56 {
+        mask &= !EIGHTH_RANK;
+    }
+    if position > 7 {
+        mask &= !FIRST_RANK;
+    }
+    if position % 8 < 7 {
+        mask &= !H_FILE;
+    }
+    if position % 8 > 0 {
+        mask &= !A_FILE;
     }
 
     // A list of the on-bit positions in the move mask
     let on_bits = set_bit_positions(mask);
 
-    fn blockers_helper(mut list: Vec<u8>, acc: u64) -> Vec<u64> {
+    println!("{:b}", mask);
+
+    // This helper recursively generates all the combinations of blockers.
+    // For each potential blocker square we include it in one recursive call and exclude it in the other
+    fn blockers_helper(list: Vec<u8>, acc: u64) -> Vec<u64> {
         match list.as_slice() {
             [] => {
                 vec![acc]
@@ -406,7 +535,7 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
             _ => {
                 let bit_set = 1 << list[0];
                 let with_my_contribution = acc | bit_set;
-                let (head, tail) = list.split_at(1);
+                let (_, tail) = list.split_at(1);
                 let mut result = blockers_helper(tail.to_vec(), with_my_contribution);
                 result.extend(blockers_helper(tail.to_vec(), acc));
                 result
@@ -416,6 +545,7 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
 
     blockers_helper(on_bits, 0)
 }
+
 // fn king_moves() -> Vec<u64> {
 //     let mut moves: Vec<u64> = Vec::new();
 //     for position in 0..64 {
@@ -460,52 +590,80 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
 //     }
 //     moves
 // }
-// fn rook_moves() -> Vec<u64> {
-//     let mut moves: Vec<u64> = Vec::new();
-//     let mut mask: u64;
-//     for position in 0..64 {
-//         mask = 0;
-//         let mut distance: i8 = 8;
-//         if position < 56 {
-//             //check that it doesn't get too high or hit anything
-//             while (position as i8 + distance <= 63){
-//                 mask |= 1 << (position + distance);
-//                 distance += 8;
-//             }
-//         }
-//         //west loop
-//         if position % 8 > 0 {
-//             distance = -1;
-//             //check that it doesn't wrap around or hit anything. >= 0 check needed because % is remainder NOT modulus
-//             while ((position as i8 + distance) >= 0)
-//                 && (((position as i8 + distance) % 8) < 7)
-//             {
-//                 mask |= 1 << (position + distance);
-//                 distance -= 1;
-//             }
-//         }
-//         //east loop
-//         if position % 8 < 7 {
-//             distance = 1;
-//             //check that it doesn't get too high, wrap around, or hit anything
-//             while ((position as i8 + distance) % 8 > 0)  {
-//                 mask |= 1 << (position + distance);
-//                 distance += 1;
-//             }
-//         }
-//         //south loop
-//         if position > 7 {
-//             distance = -8;
-//             //check that it doesn't get too low or hit anything
-//             while (0 <= position as i8 + distance){
-//                 mask |= 1 << (position + distance);
-//                 distance -= 8;
-//             }
-//         }
-//         moves.push(mask);
-//     }
-//     moves
-// }
+
+
+
+// Generates all legal rook moves for all blocker configs given a position 
+fn rook_moves(position: u8) -> Vec<u64> {
+    let mut moves: Vec<u64> = Vec::new();
+    let mut mask: u64;
+    let blockers = blockers(crate::WHITE_ROOK, position as usize);
+    for blocked in blockers {
+        mask = 0;
+
+        // north loop
+        let mut obstructed = false;
+        let mut distance: i8 = 8;
+        if position < 56 {
+            //check that it doesn't get too high or hit anything
+            while (position as i8 + distance <= 63 && !obstructed){
+                mask |= 1 << (position as i8 + distance);
+                distance += 8;
+                if blocked & (1 << (position as i8 + distance)) != 0 {
+                    obstructed = true;
+                }
+            }
+        }
+
+        // west loop
+        obstructed = false;
+        if position % 8 > 0 {
+            distance = -1;
+            //check that it doesn't wrap around or hit anything. >= 0 check needed because % is remainder NOT modulus
+            while ((position as i8 + distance) >= 0)
+                && (((position as i8 + distance) % 8) < 7 
+                && !obstructed)
+            {
+                mask |= 1 << (position as i8 + distance);
+                distance -= 1;
+                if blocked & (1 << (position as i8 + distance)) != 0 {
+                    obstructed = true;
+                }
+            }
+        }
+
+        // east loop
+        obstructed = false;
+        if position % 8 < 7 {
+            distance = 1;
+            //check that it doesn't get too high, wrap around, or hit anything
+            while ((position as i8 + distance) % 8 > 0 && !obstructed)  {
+                mask |= 1 << (position as i8 + distance);
+                distance += 1;
+                if blocked & (1 << (position as i8 + distance)) != 0 {
+                    obstructed = true;
+                }
+            }
+        }
+
+        // south loop
+        obstructed = false;
+        if position > 7 {
+            distance = -8;
+            //check that it doesn't get too low or hit anything
+            while (0 <= position as i8 + distance && !obstructed){
+                mask |= 1 << (position as i8+ distance);
+                distance -= 8;
+                if blocked & (1 << (position as i8 + distance)) != 0 {
+                    obstructed = true;
+                }
+            }
+        }
+        moves.push(mask);
+    }
+    moves
+}
+
 // fn bishop_moves() -> Vec<u64> {
 //         let mut moves: Vec<u64> = Vec::new();
 //         let mut mask: u64;
@@ -559,6 +717,7 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
 //     }
 //     moves
 // }
+ 
 // fn knight_moves_generator() ->Vec<u64> {
 //     let mut moves: Vec<u64> = Vec::new();
 //     let mut mask: u64;
@@ -612,45 +771,81 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
 //     moves
 // }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg(test)]
 
-    #[test]
-    fn blocker_list() {
-        use crate::{WHITE_KNIGHT, WHITE_ROOK};
-        let mut positions = set_bit_positions(144680345676153597);
-        let mut blocks = blockers(WHITE_ROOK, 1);
+#[test]
+fn mask() {
+    blockers(crate::WHITE_ROOK, 0);
+}
 
-        for elem in &blocks {
-            
-            if elem & !rook_move_masks[1] != 0 {
-                assert!(false, "Some blocker had 1 bits outside of the rook's move mask");
-            }
+#[test]
+fn generate_attacks() {
+    use crate::WHITE_ROOK;
+
+    sliding_attacks(WHITE_ROOK, 0);
+}
+
+#[test]
+fn blocker_list() {
+    use crate::{WHITE_KNIGHT, WHITE_ROOK};
+    let mut blocks = blockers(WHITE_ROOK, 1);
+
+    for elem in &blocks {
+        if elem & !ROOK_MOVE_MASKS[1] != 0 {
+            assert!(
+                false,
+                "Some blocker had 1 bits outside of the rook's move mask"
+            );
         }
-        // println!("blockers: {:#?}", blockers);
-        // println!("the numbuh of blockuhs: {}", blocks.len());
-        assert_eq!(blocks.len() as u32, 2u32.pow(14));
-
-        positions = set_bit_positions(knight_move_masks[20]);
-        blocks = blockers(WHITE_KNIGHT, 20);
-
-        for elem in &blocks {
-            
-            if elem & !knight_move_masks[20] != 0 {
-                assert!(false, "Some blocker had 1 bits outside of the knights's move mask");
-            }
-        }
-        println!("blockers: {:#?}", blocks);
-        println!("the numbuh of blockuhs: {}", blocks.len());
-        assert_eq!(blocks.len() as u32, 2u32.pow(8));
-
-
     }
-    // #[test]
-    // fn positions() {
-    //     let list = set_bit_positions(9,);
-    //     println!("{:#?}", list);
-    //     assert_eq!(1, 1);
-    // }
+
+    // println!("blockers: {:#?}", blockers);
+    // println!("the numbuh of blockuhs: {}", blocks.len());
+    assert_eq!(blocks.len() as u32, 2u32.pow(11));
+
+    blocks = blockers(WHITE_BISHOP, 20);
+
+    for elem in &blocks {
+        if elem & !BISHOP_MOVE_MASKS[20] != 0 {
+            assert!(
+                false,
+                "Some blocker had 1 bits outside of the bishop's move mask"
+            );
+        }
+    }
+    println!("blockers: {:#?}", blocks);
+    println!("the numbuh of blockuhs: {}", blocks.len());
+    assert_eq!(blocks.len() as u32, 2u32.pow(7));
+}
+// #[test]
+// fn positions() {
+//     let list = set_bit_positions(9,);
+//     println!("{:#?}", list);
+//     assert_eq!(1, 1);
+// }
 
 // #[test]
 // fn masks() {
