@@ -600,6 +600,7 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
     let mut mask: u64;
     let blockers = blockers(crate::WHITE_ROOK, position as usize);
     let blockers_clone = blockers.clone(); // FOR TESTING ONLY
+
     for blocked in blockers {
         mask = 0;
 
@@ -608,11 +609,12 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
         let mut distance: i8 = 8;
         if position < 56 {
             //check that it doesn't get too high or hit anything
-            while (position as i8 + distance <= 63 && !obstructed){
+            while position as i8 + distance <= 63 && !obstructed{
                 mask |= 1 << (position as i8 + distance);
                 if blocked & (1 << (position as i8 + distance)) != 0 {
                     obstructed = true;
                 }
+
                 distance += 8;
             }
         }
@@ -639,7 +641,7 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
         if position % 8 < 7 {
             distance = 1;
             //check that it doesn't get too high, wrap around, or hit anything
-            while ((position as i8 + distance) % 8 > 0 && !obstructed)  {
+            while (position as i8 + distance) % 8 > 0 && !obstructed {
                 mask |= 1 << (position as i8 + distance);
                 if blocked & (1 << (position as i8 + distance)) != 0 {
                     obstructed = true;
@@ -653,7 +655,7 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
         if position > 7 {
             distance = -8;
             //check that it doesn't get too low or hit anything
-            while (0 <= position as i8 + distance && !obstructed){
+            while 0 <= position as i8 + distance && !obstructed {
                 mask |= 1 << (position as i8+ distance);
                 if blocked & (1 << (position as i8 + distance)) != 0 {
                     obstructed = true;

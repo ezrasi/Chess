@@ -1,3 +1,10 @@
+12/20/24:
+    Make a HashMap<blockers, legals>. Then, make a new HashMap<legals,Vec<blockers>>. Iterate through the first hashmap and make the legal the key for the second 
+    and add the blocker to that legal's value list. if the second doesnt have the legal key yet, add the (legal, Vec::new(blocker)) to the second. 
+    Then, extract the keys from the second hashmap (the legals). We can then generate magics and ensure all the blockers in a vector from the second hashmap will map to 
+    the same key in the final array
+
+
 12/19/24: 
     Test the rook_moves function to make sure it creates the correct legal move bitboards for each blocker configuration
 
