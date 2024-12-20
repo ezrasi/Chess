@@ -8,7 +8,7 @@ I was of course helped immensely by the Chess Programming Wiki (https://www.ches
 
 Ike is named after my granfather, who taught me chess when I was a kid. I never did beat him :)
 
-![Photo of Ike (my Pop-Pop) and me](images/Ike_and_me.jpg)
+![Photo of Ike (my Pop-Pop) and me](Ike_and_me.jpg)
 
 
 
