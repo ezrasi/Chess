@@ -1,8 +1,8 @@
 use crate::{board, Board, BLACK_BISHOP, BLACK_KNIGHT, WHITE_BISHOP};
-use std::fs::OpenOptions;
-use std::io::Write;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::fs::OpenOptions;
+use std::io::Write;
 
 // a-file             0x0101010101010101
 // h-file             0x8080808080808080
@@ -369,31 +369,53 @@ const KING_MOVE_MASKS: [u64; 64] = [
     4665729213955833856,
 ];
 
-
-
 // Create magics for one piece on one square
 fn one_magic(map: &HashMap<u64, Vec<u64>>) -> (Vec<u64>, u64) {
+    // Put keys into a Vec (so we have indices)
     let keys: Vec<u64> = map.keys().cloned().collect();
 
     let mut found = false;
+    let mut magic: u64 = 0;
 
-    while (!found) {
-       found = true; 
+    let num_of_keys = keys.len();
 
+    // We need the number of digits that will cover the capacity of the number of keys
+    let log = (num_of_keys as f64).log(2.0);
+    let shifts: u64 = ( num_of_keys % (log.floor() as usize))  as u64;
 
+    while !found {
+        magic = fastrand::u64(..);
 
+        // For each key
+        for i in 0..num_of_keys {
+            // Get the associated list of blocker configs
+            let values = map.get(&keys[i]);
+            // For each of those, make sure they map to the correct key
+            for blocker in values.unwrap() {
+                // Use checked_mul to prevent overflow
+                if let Some(product) = blocker.checked_mul(magic) {
+                    let index = product >> shifts;
+                    if !map.get(&keys[index as usize]).unwrap().contains(blocker) {
+                        continue;
+                    }
+                } 
+                // If there was overflow, generate new magic
+                else {
+                    continue;
+                }
+            }
+        }
 
-
+        found = true;
     }
 
-
-
+    (keys, magic)
 }
 // Create <blocker, legal> hashmap
 fn create_first_map(blockers: &Vec<u64>, legals: &Vec<u64>) -> HashMap<u64, u64> {
     let mut result = HashMap::new();
     for i in 0..blockers.len() {
-       result.insert(blockers[i], legals[i]); 
+        result.insert(blockers[i], legals[i]);
     }
     result
 }
@@ -404,8 +426,7 @@ fn create_second_map(map: &HashMap<u64, u64>) -> HashMap<u64, Vec<u64>> {
     for (blocker, legal) in map {
         if result.contains_key(&legal) {
             result.get_mut(&legal).unwrap().push(*blocker);
-        } 
-        else {
+        } else {
             result.insert(*legal, vec![*blocker]);
         }
     }
@@ -539,16 +560,19 @@ fn set_bit_positions(mut number: u64) -> Vec<u8> {
 fn blockers(piece: u8, position: usize) -> Vec<u64> {
     let mut mask: u64;
     match piece {
-
         crate::WHITE_BISHOP | crate::BLACK_BISHOP => {
             mask = BISHOP_MOVE_MASKS[position];
         }
 
-        crate::WHITE_ROOK | crate::BLACK_ROOK => { mask = ROOK_MOVE_MASKS[position]; }
+        crate::WHITE_ROOK | crate::BLACK_ROOK => {
+            mask = ROOK_MOVE_MASKS[position];
+        }
 
-        crate::WHITE_QUEEN | crate::BLACK_QUEEN => { mask = QUEEN_MOVE_MASKS[position]; }
+        crate::WHITE_QUEEN | crate::BLACK_QUEEN => {
+            mask = QUEEN_MOVE_MASKS[position];
+        }
 
-        _ => panic!("blockers didn't receive sliding piece")
+        _ => panic!("blockers didn't receive sliding piece"),
     }
 
     // Get rid of the appropriate edges for the blocker mask
@@ -590,7 +614,7 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
 
     blockers_helper(on_bits, 0)
 }
- 
+
 // fn king_moves() -> Vec<u64> {
 //     let mut moves: Vec<u64> = Vec::new();
 //     for position in 0..64 {
@@ -636,8 +660,6 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
 //     moves
 // }
 
-
-
 // Generates all legal rook moves for all blocker configs given a position, returning blockers too
 // for testing
 fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
@@ -654,7 +676,7 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
         let mut distance: i8 = 8;
         if position < 56 {
             //check that it doesn't get too high or hit anything
-            while position as i8 + distance <= 63 && !obstructed{
+            while position as i8 + distance <= 63 && !obstructed {
                 mask |= 1 << (position as i8 + distance);
                 if blocked & (1 << (position as i8 + distance)) != 0 {
                     obstructed = true;
@@ -670,8 +692,7 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
             distance = -1;
             //check that it doesn't wrap around or hit anything. >= 0 check needed because % is remainder NOT modulus
             while ((position as i8 + distance) >= 0)
-                && (((position as i8 + distance) % 8) < 7 
-                && !obstructed)
+                && (((position as i8 + distance) % 8) < 7 && !obstructed)
             {
                 mask |= 1 << (position as i8 + distance);
                 if blocked & (1 << (position as i8 + distance)) != 0 {
@@ -701,7 +722,7 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
             distance = -8;
             //check that it doesn't get too low or hit anything
             while 0 <= position as i8 + distance && !obstructed {
-                mask |= 1 << (position as i8+ distance);
+                mask |= 1 << (position as i8 + distance);
                 if blocked & (1 << (position as i8 + distance)) != 0 {
                     obstructed = true;
                 }
@@ -710,7 +731,7 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
         }
         moves.push(mask);
     }
-(blockers_clone,moves)
+    (blockers_clone, moves)
 }
 
 // fn bishop_moves() -> Vec<u64> {
@@ -766,7 +787,7 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
 //     }
 //     moves
 // }
- 
+
 // fn knight_moves_generator() ->Vec<u64> {
 //     let mut moves: Vec<u64> = Vec::new();
 //     let mut mask: u64;
@@ -820,31 +841,38 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
 //     moves
 // }
 
-
-
-
 fn print_binary_board(value: u64) {
-     let binary_string = format!("{:064b}", value); // Convert to a 64-bit binary string
+    let binary_string = format!("{:064b}", value); // Convert to a 64-bit binary string
     let reversed_binary_string: String = binary_string.chars().rev().collect(); // Reverse the entire string
 
     // Print chunks in reverse order directly
-    reversed_binary_string.as_bytes().chunks(8).rev().for_each(|chunk| {
-        println!("{}", std::str::from_utf8(chunk).unwrap());
-    });
+    reversed_binary_string
+        .as_bytes()
+        .chunks(8)
+        .rev()
+        .for_each(|chunk| {
+            println!("{}", std::str::from_utf8(chunk).unwrap());
+        });
 }
 
-
-
-
 #[cfg(test)]
-
 #[test]
-fn legalvecmap() {
-
+fn trymagic() {
     let (blockers, legals) = rook_moves(0);
     let map1 = create_first_map(&blockers, &legals);
     let map2 = create_second_map(&map1);
-    
+
+    let (legals, magic) = one_magic(&map2);
+
+    println!("{:?}, {}", legals, magic);
+}
+
+#[test]
+fn legalvecmap() {
+    let (blockers, legals) = rook_moves(0);
+    let map1 = create_first_map(&blockers, &legals);
+    let map2 = create_second_map(&map1);
+
     let mut duplicates = HashSet::new();
     let mut no_duplicates = true;
 
@@ -856,17 +884,15 @@ fn legalvecmap() {
     for legal in values.unwrap() {
         print_binary_board(*legal);
         println!("");
-        
+
         if duplicates.contains(legal) {
             no_duplicates = false;
         } else {
             duplicates.insert(*legal);
         }
-
     }
 
     assert!(no_duplicates);
-
 }
 
 #[test]
@@ -885,7 +911,7 @@ fn rook_legal_bitboards() {
     print_binary_board(blockers[300]);
     println!("Legal 300:");
     print_binary_board(legals[300]);
-    
+
     println!("Blocker 2051: ");
     print_binary_board(blockers[2051]);
     println!("Legal 2051:");
@@ -914,14 +940,12 @@ fn rook_legal_bitboards() {
     print_binary_board(blockers[713]);
     println!("Legal 713:");
     print_binary_board(legals[713]);
-    
+
     println!("Blocker 1010: ");
     print_binary_board(blockers[1010]);
     println!("Legal 1010:");
     print_binary_board(legals[1010]);
 }
-
-
 
 #[test]
 fn mask() {
