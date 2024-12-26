@@ -1,6 +1,8 @@
 use crate::{board, Board, BLACK_BISHOP, BLACK_KNIGHT, WHITE_BISHOP};
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::collections::HashMap;
+use std::collections::HashSet;
 
 // a-file             0x0101010101010101
 // h-file             0x8080808080808080
@@ -367,6 +369,49 @@ const KING_MOVE_MASKS: [u64; 64] = [
     4665729213955833856,
 ];
 
+
+
+// Create magics for one piece on one square
+fn one_magic(map: &HashMap<u64, Vec<u64>>) -> (Vec<u64>, u64) {
+    let keys: Vec<u64> = map.keys().cloned().collect();
+
+    let mut found = false;
+
+    while (!found) {
+       found = true; 
+
+
+
+
+
+    }
+
+
+
+}
+// Create <blocker, legal> hashmap
+fn create_first_map(blockers: &Vec<u64>, legals: &Vec<u64>) -> HashMap<u64, u64> {
+    let mut result = HashMap::new();
+    for i in 0..blockers.len() {
+       result.insert(blockers[i], legals[i]); 
+    }
+    result
+}
+
+// Create <legal, Vec<blocker>> hashmap from <blocker, legal> map
+fn create_second_map(map: &HashMap<u64, u64>) -> HashMap<u64, Vec<u64>> {
+    let mut result: HashMap<u64, Vec<u64>> = HashMap::new();
+    for (blocker, legal) in map {
+        if result.contains_key(&legal) {
+            result.get_mut(&legal).unwrap().push(*blocker);
+        } 
+        else {
+            result.insert(*legal, vec![*blocker]);
+        }
+    }
+    result
+}
+
 // This function takes in a vector and appends it to a specified file (currently hardcoded)
 fn append_vector_to_file(vector: &[Vec<u64>]) -> std::io::Result<()> {
     let mut file = OpenOptions::new()
@@ -545,7 +590,7 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
 
     blockers_helper(on_bits, 0)
 }
-
+ 
 // fn king_moves() -> Vec<u64> {
 //     let mut moves: Vec<u64> = Vec::new();
 //     for position in 0..64 {
@@ -778,19 +823,6 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 fn print_binary_board(value: u64) {
      let binary_string = format!("{:064b}", value); // Convert to a 64-bit binary string
     let reversed_binary_string: String = binary_string.chars().rev().collect(); // Reverse the entire string
@@ -805,6 +837,37 @@ fn print_binary_board(value: u64) {
 
 
 #[cfg(test)]
+
+#[test]
+fn legalvecmap() {
+
+    let (blockers, legals) = rook_moves(0);
+    let map1 = create_first_map(&blockers, &legals);
+    let map2 = create_second_map(&map1);
+    
+    let mut duplicates = HashSet::new();
+    let mut no_duplicates = true;
+
+    let key = map2.keys().next();
+    let values = map2.get(key.unwrap());
+    println!("Key: ");
+    print_binary_board(*key.unwrap());
+    println!("Values: ");
+    for legal in values.unwrap() {
+        print_binary_board(*legal);
+        println!("");
+        
+        if duplicates.contains(legal) {
+            no_duplicates = false;
+        } else {
+            duplicates.insert(*legal);
+        }
+
+    }
+
+    assert!(no_duplicates);
+
+}
 
 #[test]
 fn rook_legal_bitboards() {
@@ -857,6 +920,8 @@ fn rook_legal_bitboards() {
     println!("Legal 1010:");
     print_binary_board(legals[1010]);
 }
+
+
 
 #[test]
 fn mask() {
