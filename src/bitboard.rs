@@ -370,9 +370,10 @@ const KING_MOVE_MASKS: [u64; 64] = [
 ];
 
 // Create magics for one piece on one square
-fn one_magic(map: &HashMap<u64, Vec<u64>>) -> (Vec<u64>, u64) {
+fn one_magic(map: &HashMap<u64, Vec<u64>>) -> (Vec<u64>, u64, u64, usize) {
     // Put keys into a Vec (so we have indices)
     let keys: Vec<u64> = map.keys().cloned().collect();
+    let blockers: Vec<Vec<u64>> = map.values().cloned().collect();
 
     let mut found = false;
     let mut magic: u64 = 0;
@@ -380,12 +381,13 @@ fn one_magic(map: &HashMap<u64, Vec<u64>>) -> (Vec<u64>, u64) {
     let num_of_keys = keys.len();
 
     // We need the number of digits that will cover the capacity of the number of keys
-    let log = (num_of_keys as f64).log(2.0);
-    let shifts: u64 = ( num_of_keys % (log.floor() as usize))  as u64;
+    let log = (num_of_keys as f64).log2().ceil() as u64;
+    let shifts: u64 = 64 - log; 
 
-    while !found {
-        magic = fastrand::u64(..);
-
+    'outer: while !found {
+        // CHANGE HOW WE CHOOSE THE MAGIC 
+        magic = fastrand::u64(..) % 2u64.pow(16);
+        println!("Magic: {}", magic);
         // For each key
         for i in 0..num_of_keys {
             // Get the associated list of blocker configs
@@ -393,23 +395,19 @@ fn one_magic(map: &HashMap<u64, Vec<u64>>) -> (Vec<u64>, u64) {
             // For each of those, make sure they map to the correct key
             for blocker in values.unwrap() {
                 // Use checked_mul to prevent overflow
-                if let Some(product) = blocker.checked_mul(magic) {
-                    let index = product >> shifts;
-                    if !map.get(&keys[index as usize]).unwrap().contains(blocker) {
-                        continue;
+                 let product = blocker.wrapping_mul(magic); 
+                    let index = (product >> shifts) as usize % num_of_keys;
+                    if !(map.get(&keys[index]).unwrap().contains(blocker)) {
+                        continue 'outer;
                     }
-                } 
-                // If there was overflow, generate new magic
-                else {
-                    continue;
-                }
+                 
             }
         }
 
         found = true;
     }
 
-    (keys, magic)
+    (keys, magic, shifts, num_of_keys)
 }
 // Create <blocker, legal> hashmap
 fn create_first_map(blockers: &Vec<u64>, legals: &Vec<u64>) -> HashMap<u64, u64> {
@@ -862,9 +860,19 @@ fn trymagic() {
     let map1 = create_first_map(&blockers, &legals);
     let map2 = create_second_map(&map1);
 
-    let (legals, magic) = one_magic(&map2);
+    let (legals, magic, shifts, num_of_keys) = one_magic(&map2);
 
-    println!("{:?}, {}", legals, magic);
+    let product = blockers[0].wrapping_mul(magic);
+    let index = (product >> shifts) as usize % num_of_keys;
+    let resulting = legals[index];
+
+    println!("Blocker configuration: ");
+    print_binary_board(blockers[0]);
+    println!("Legal moves: ");
+    print_binary_board(resulting);
+
+    println!("Legals: ");
+     println!("{:?}", legals);
 }
 
 #[test]
