@@ -370,7 +370,7 @@ const KING_MOVE_MASKS: [u64; 64] = [
 ];
 
 // Create magics for one piece on one square
-fn one_magic(map: &HashMap<u64, Vec<u64>>) -> (Vec<u64>, u64, u64, usize) {
+fn one_magic(map: &HashMap<u64, Vec<u64>>) -> (Vec<u64>, u64) {
     // Put keys into a Vec (so we have indices)
     let keys: Vec<u64> = map.keys().cloned().collect();
     let blockers: Vec<Vec<u64>> = map.values().cloned().collect();
@@ -381,34 +381,67 @@ fn one_magic(map: &HashMap<u64, Vec<u64>>) -> (Vec<u64>, u64, u64, usize) {
     let num_of_keys = keys.len();
 
     // We need the number of digits that will cover the capacity of the number of keys
-    let log = (num_of_keys as f64).log2().ceil() as u64;
-    let shifts: u64 = 64 - log; 
+    let log = 12; 
+   
 
-    'outer: while !found {
-        // CHANGE HOW WE CHOOSE THE MAGIC 
-        magic = fastrand::u64(..) % 2u64.pow(16);
-        println!("Magic: {}", magic);
-        // For each key
-        for i in 0..num_of_keys {
-            // Get the associated list of blocker configs
-            let values = map.get(&keys[i]);
-            // For each of those, make sure they map to the correct key
-            for blocker in values.unwrap() {
-                // Use checked_mul to prevent overflow
-                 let product = blocker.wrapping_mul(magic); 
-                    let index = (product >> shifts) as usize % num_of_keys;
-                    if !(map.get(&keys[index]).unwrap().contains(blocker)) {
-                        continue 'outer;
-                    }
-                 
+    loop {
+        let magic = fastrand::u64(..) & fastrand::u64(..) & fastrand::u64(..);
+        if let Ok(table) = build_table(log, magic, map) {
+            return (table, magic);
+        }
+    }
+}
+
+struct TableError;
+
+// Try to return a hashtable given a magic
+fn build_table(
+    log: u64,
+    magic: u64,
+    map: &HashMap<u64, Vec<u64>>,
+) -> Result<Vec<u64>, TableError> {
+    let mut table = vec![0; 1 << log];
+     let shifts: u64 = 64 - log;
+
+    // For each key
+    for key in map.keys() {
+        //println!("Key: ");
+        //print_binary_board(*key);
+        // Get the associated list of blocker configs
+        let values = map.get(key);
+        // For each of those, make sure they map to the correct key
+        for blocker in values.unwrap() {
+            //println!("Blocker: ");
+           // print_binary_board(*blocker);
+            // Use checked_mul to prevent overflow
+            let product = blocker.wrapping_mul(magic);
+            let index = (product >> shifts) as usize;
+                //println!("Index: {index}");
+                //println!("Table[index]: {}", table[index]);
+                //println!("Table before: {:?}", table);
+            if table[index] == 0 {
+                table[index] = *key;
+                //println!("Table after: {:?}", table);
+
+            } else if table[index] != *key {
+               // println!("Key: {}", *key);
+                return Err(TableError);
             }
         }
-
-        found = true;
     }
 
-    (keys, magic, shifts, num_of_keys)
+    Ok(table)
 }
+
+fn count_ones(num: &mut u64) -> u8 {
+    let mut i = 0;
+    while *num > 0 {
+       *num &= *num - 1;
+        i += 1;
+    }
+    i
+}
+
 // Create <blocker, legal> hashmap
 fn create_first_map(blockers: &Vec<u64>, legals: &Vec<u64>) -> HashMap<u64, u64> {
     let mut result = HashMap::new();
@@ -425,7 +458,9 @@ fn create_second_map(map: &HashMap<u64, u64>) -> HashMap<u64, Vec<u64>> {
         if result.contains_key(&legal) {
             result.get_mut(&legal).unwrap().push(*blocker);
         } else {
-            result.insert(*legal, vec![*blocker]);
+            let mut to_add = Vec::new();
+            to_add.push(*blocker);
+            result.insert(*legal, to_add);
         }
     }
     result
@@ -542,7 +577,7 @@ fn sliding_attacks(piece: u8, position: usize) -> () {
 
 // This function returns a vec of all the on bit positions. e.g. 9 -> [0, 3]
 
-// This function takes in a u64 and outputs a Vec of the indeces of the on bits
+// This function takes in a u64 and outputs a Vec of the indices of the on bits
 fn set_bit_positions(mut number: u64) -> Vec<u8> {
     let mut result: Vec<u8> = Vec::new();
     for i in 0..63 {
@@ -860,26 +895,41 @@ fn trymagic() {
     let map1 = create_first_map(&blockers, &legals);
     let map2 = create_second_map(&map1);
 
-    let (legals, magic, shifts, num_of_keys) = one_magic(&map2);
+    let (table, magic) = one_magic(&map2);
 
-    let product = blockers[0].wrapping_mul(magic);
-    let index = (product >> shifts) as usize % num_of_keys;
-    let resulting = legals[index];
+    println!("magic: {magic}");
+    println!("");
+    print_binary_board(blockers[6]);
+    println!("");
 
-    println!("Blocker configuration: ");
-    print_binary_board(blockers[0]);
-    println!("Legal moves: ");
-    print_binary_board(resulting);
+    let index = (blockers[6].wrapping_mul(magic)) >> 52;
+    println!("Attacks: ");
+    println!("");
+    print_binary_board(table[index as usize]);
+    println!("");
 
-    println!("Legals: ");
-     println!("{:?}", legals);
+    
 }
 
 #[test]
 fn legalvecmap() {
     let (blockers, legals) = rook_moves(0);
     let map1 = create_first_map(&blockers, &legals);
+    
     let map2 = create_second_map(&map1);
+
+    for (legal, blockers) in map2.iter() {
+        println!("Legal: ");
+        print_binary_board(*legal);
+
+        println!("Blockers: ");
+        for blocker in blockers {
+            print_binary_board(*blocker);
+            println!("");
+        }
+
+
+    }
 
     let mut duplicates = HashSet::new();
     let mut no_duplicates = true;
