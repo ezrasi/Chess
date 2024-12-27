@@ -899,10 +899,10 @@ fn trymagic() {
 
     println!("magic: {magic}");
     println!("");
-    print_binary_board(blockers[6]);
+    print_binary_board(blockers[4000]);
     println!("");
 
-    let index = (blockers[6].wrapping_mul(magic)) >> 52;
+    let index = (blockers[4000].wrapping_mul(magic)) >> 52;
     println!("Attacks: ");
     println!("");
     print_binary_board(table[index as usize]);

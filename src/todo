@@ -1,3 +1,6 @@
+12/26/24:
+  Refactor code to generate attack maps while looking for magics. No need to deal with multiple hashmaps.
+
 12/20/24:
     Make a HashMap<blockers, legals>. Then, make a new HashMap<legals,Vec<blockers>>. Iterate through the first hashmap and make the legal the key for the second 
     and add the blocker to that legal's value list. if the second doesnt have the legal key yet, add the (legal, Vec::new(blocker)) to the second. 
