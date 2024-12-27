@@ -369,24 +369,31 @@ const KING_MOVE_MASKS: [u64; 64] = [
     4665729213955833856,
 ];
 
-// Create magics for one piece on one square
-fn one_magic(map: &HashMap<u64, Vec<u64>>) -> (Vec<u64>, u64) {
-    // Put keys into a Vec (so we have indices)
-    let keys: Vec<u64> = map.keys().cloned().collect();
-    let blockers: Vec<Vec<u64>> = map.values().cloned().collect();
+const RBITS: [u8; 64] = [
+    12, 11, 11, 11, 11, 11, 11, 12, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11, 12, 11, 11, 11, 11, 11, 11, 12,
+];
 
-    let mut found = false;
-    let mut magic: u64 = 0;
+const BBITS: [u8; 64] = [
+    6, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 6,
+];
 
-    let num_of_keys = keys.len();
-
-    // We need the number of digits that will cover the capacity of the number of keys
-    let log = 12; 
-   
+fn find_magics(piece: u8, position: u8) -> (Vec<u64>, u64) {
+    let (blockers, attacks) = match piece {
+        crate::WHITE_ROOK | crate::BLACK_ROOK => rook_moves(position),
+        crate::WHITE_BISHOP | crate::BLACK_BISHOP => bishop_moves(position),
+        _ => panic!("Can't find magics for non-sliding pieces"),
+    };
+    let on_bits = match piece {
+        crate::WHITE_ROOK | crate::BLACK_ROOK => RBITS[position as usize],
+        crate::WHITE_BISHOP | crate::BLACK_BISHOP => BBITS[position as usize],
+    };
 
     loop {
         let magic = fastrand::u64(..) & fastrand::u64(..) & fastrand::u64(..);
-        if let Ok(table) = build_table(log, magic, map) {
+        if let Ok(table) = build_table(magic, on_bits, blockers, attacks) {
             return (table, magic);
         }
     }
@@ -396,47 +403,31 @@ struct TableError;
 
 // Try to return a hashtable given a magic
 fn build_table(
-    log: u64,
     magic: u64,
-    map: &HashMap<u64, Vec<u64>>,
+    on_bits: u8,
+    blockers: Vec<u64>,
+    attacks: Vec<u64>,
 ) -> Result<Vec<u64>, TableError> {
-    let mut table = vec![0; 1 << log];
-     let shifts: u64 = 64 - log;
+    let mut table = vec![0; 1 << on_bits];
+    let shifts: u64 = 64 - (on_bits as u64);
 
-    // For each key
-    for key in map.keys() {
-        //println!("Key: ");
-        //print_binary_board(*key);
-        // Get the associated list of blocker configs
-        let values = map.get(key);
-        // For each of those, make sure they map to the correct key
-        for blocker in values.unwrap() {
-            //println!("Blocker: ");
-           // print_binary_board(*blocker);
-            // Use checked_mul to prevent overflow
-            let product = blocker.wrapping_mul(magic);
-            let index = (product >> shifts) as usize;
-                //println!("Index: {index}");
-                //println!("Table[index]: {}", table[index]);
-                //println!("Table before: {:?}", table);
-            if table[index] == 0 {
-                table[index] = *key;
-                //println!("Table after: {:?}", table);
+    for i in 0..blockers.len() {
+        let product = blockers[i].wrapping_mul(magic);
+        let index = (product >> shifts) as usize;
 
-            } else if table[index] != *key {
-               // println!("Key: {}", *key);
-                return Err(TableError);
-            }
+        if table[index] == 0 {
+            table[index] = attacks[i];
+        } else if table[index] != attacks[i] {
+            return Err(TableError);
         }
     }
-
     Ok(table)
 }
 
 fn count_ones(num: &mut u64) -> u8 {
     let mut i = 0;
     while *num > 0 {
-       *num &= *num - 1;
+        *num &= *num - 1;
         i += 1;
     }
     i
@@ -907,15 +898,13 @@ fn trymagic() {
     println!("");
     print_binary_board(table[index as usize]);
     println!("");
-
-    
 }
 
 #[test]
 fn legalvecmap() {
     let (blockers, legals) = rook_moves(0);
     let map1 = create_first_map(&blockers, &legals);
-    
+
     let map2 = create_second_map(&map1);
 
     for (legal, blockers) in map2.iter() {
@@ -927,8 +916,6 @@ fn legalvecmap() {
             print_binary_board(*blocker);
             println!("");
         }
-
-
     }
 
     let mut duplicates = HashSet::new();
