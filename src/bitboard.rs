@@ -319,18 +319,32 @@ fn print_binary_board(value: u64) {
 fn init() {
 let ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics)) = init_bitboards();
 
-let blockers = blockers(WHITE_ROOK, 20);
+let blocker = blockers(WHITE_ROOK, 20);
 
 println!("");
-println!("Blocker: ");
+println!("Rook Blocker: ");
 println!("");
-print_binary_board(blockers[1000]);
+print_binary_board(blocker[1000]);
 println!("");
 
-    let index = (blockers[1000].wrapping_mul(rook_magics[20])) >> (64 - RBITS[20]);
-    println!("Attacks: ");
+    let index = (blocker[1000].wrapping_mul(rook_magics[20])) >> (64 - RBITS[20]);
+    println!("Rook Attacks: ");
     println!("");
     print_binary_board(rook_attacks[20][index as usize]);
+println!("");
+    
+let blocker = blockers(WHITE_BISHOP, 21);
+
+println!("");
+println!("Bishop Blocker: ");
+println!("");
+print_binary_board(blocker[100]);
+println!("");
+
+    let index = (blocker[100].wrapping_mul(bishop_magics[21])) >> (64 - BBITS[21]);
+    println!("Bishop Attacks: ");
+    println!("");
+    print_binary_board(bishop_attacks[21][index as usize]);
 println!("");
 
 
@@ -379,47 +393,6 @@ println!("");
 
 
 }
-
-#[test]
-fn legalvecmap() {
-    let (blockers, legals) = rook_moves(0);
-    let map1 = create_first_map(&blockers, &legals);
-
-    let map2 = create_second_map(&map1);
-
-    for (legal, blockers) in map2.iter() {
-        println!("Legal: ");
-        print_binary_board(*legal);
-
-        println!("Blockers: ");
-        for blocker in blockers {
-            print_binary_board(*blocker);
-            println!("");
-        }
-    }
-
-    let mut duplicates = HashSet::new();
-    let mut no_duplicates = true;
-
-    let key = map2.keys().next();
-    let values = map2.get(key.unwrap());
-    println!("Key: ");
-    print_binary_board(*key.unwrap());
-    println!("Values: ");
-    for legal in values.unwrap() {
-        print_binary_board(*legal);
-        println!("");
-
-        if duplicates.contains(legal) {
-            no_duplicates = false;
-        } else {
-            duplicates.insert(*legal);
-        }
-    }
-
-    assert!(no_duplicates);
-}
-
 #[test]
 fn rook_legal_bitboards() {
     // For position 0
@@ -472,47 +445,4 @@ fn rook_legal_bitboards() {
     print_binary_board(legals[1010]);
 }
 
-#[test]
-fn mask() {
-    blockers(WHITE_ROOK, 0);
-}
-
-#[test]
-fn generate_attacks() {
-    use WHITE_ROOK;
-
-    sliding_attacks(WHITE_ROOK, 0);
-}
-
-#[test]
-fn blocker_list() {
-    let mut blocks = blockers(WHITE_ROOK, 1);
-
-    for elem in &blocks {
-        if elem & !ROOK_MOVE_MASKS[1] != 0 {
-            assert!(
-                false,
-                "Some blocker had 1 bits outside of the rook's move mask"
-            );
-        }
-    }
-
-    // println!("blockers: {:#?}", blockers);
-    // println!("the numbuh of blockuhs: {}", blocks.len());
-    assert_eq!(blocks.len() as u32, 2u32.pow(11));
-
-    blocks = blockers(WHITE_BISHOP, 20);
-
-    for elem in &blocks {
-        if elem & !BISHOP_MOVE_MASKS[20] != 0 {
-            assert!(
-                false,
-                "Some blocker had 1 bits outside of the bishop's move mask"
-            );
-        }
-    }
-    println!("blockers: {:#?}", blocks);
-    println!("the numbuh of blockuhs: {}", blocks.len());
-    assert_eq!(blocks.len() as u32, 2u32.pow(7));
-}
  
