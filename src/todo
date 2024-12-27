@@ -1,3 +1,6 @@
+12/27/24:
+  Create movegen function with helpers for all pieces (pawns, knights, etc). Takes in a board state and returns all legal moves
+
 12/26/24:
   Refactor code to generate attack maps while looking for magics. No need to deal with multiple hashmaps.
 
