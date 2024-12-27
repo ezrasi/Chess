@@ -389,11 +389,12 @@ fn find_magics(piece: u8, position: u8) -> (Vec<u64>, u64) {
     let on_bits = match piece {
         crate::WHITE_ROOK | crate::BLACK_ROOK => RBITS[position as usize],
         crate::WHITE_BISHOP | crate::BLACK_BISHOP => BBITS[position as usize],
+        _ => panic!("Can't find magics for non-sliding pieces"),
     };
 
     loop {
         let magic = fastrand::u64(..) & fastrand::u64(..) & fastrand::u64(..);
-        if let Ok(table) = build_table(magic, on_bits, blockers, attacks) {
+        if let Ok(table) = build_table(magic, on_bits, &blockers, &attacks) {
             return (table, magic);
         }
     }
@@ -405,8 +406,8 @@ struct TableError;
 fn build_table(
     magic: u64,
     on_bits: u8,
-    blockers: Vec<u64>,
-    attacks: Vec<u64>,
+    blockers: &Vec<u64>,
+    attacks: &Vec<u64>,
 ) -> Result<Vec<u64>, TableError> {
     let mut table = vec![0; 1 << on_bits];
     let shifts: u64 = 64 - (on_bits as u64);
@@ -690,9 +691,8 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
     let mut moves: Vec<u64> = Vec::new();
     let mut mask: u64;
     let blockers = blockers(crate::WHITE_ROOK, position as usize);
-    let blockers_clone = blockers.clone(); // FOR TESTING ONLY
 
-    for blocked in blockers {
+    for blocked in blockers.iter() {
         mask = 0;
 
         // north loop
@@ -755,7 +755,89 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
         }
         moves.push(mask);
     }
-    (blockers_clone, moves)
+    (blockers, moves)
+}
+
+// Generates all legal bishop moves for all blocker configs given a position, returning blockers too
+// for testing
+fn bishop_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
+    let mut moves: Vec<u64> = Vec::new();
+    let mut mask: u64;
+    let blockers = blockers(crate::WHITE_BISHOP, position as usize);
+
+    for blocked in blockers.iter() {
+        mask = 0;
+
+        // northwest loop
+        let mut obstructed = false;
+        let mut distance: i8 = 7;
+        if (position < 56) && (position % 8) > 0 {
+            //check that it doesn't get too high or hit anything
+            while (position as i8 + distance < 63)
+                && ((position as i8 + distance) % 8 < 7)
+                && !obstructed
+            {
+                mask |= 1 << (position as i8 + distance);
+                if blocked & (1 << (position as i8 + distance)) != 0 {
+                    obstructed = true;
+                }
+
+                distance += 7;
+            }
+        }
+
+        // northeast loop
+        obstructed = false;
+        if (position < 56) && (position % 8 < 7) {
+            distance = 9;
+            while ((position as i8 + distance) <= 63)
+                && ((position as i8 + distance) % 8 > 0)
+                && !obstructed
+            {
+                mask |= 1 << (position as i8 + distance);
+                if blocked & (1 << (position as i8 + distance)) != 0 {
+                    obstructed = true;
+                }
+                distance += 9;
+            }
+        }
+
+        // southwest loop
+        obstructed = false;
+        if (position > 7) && (position % 8 > 0) {
+            distance = -9;
+            //check that it doesn't get too high, wrap around, or hit anything
+            while ((position as i8 + distance) >= 0)
+                && ((position as i8 + distance) % 8 < 7)
+                && !obstructed
+            {
+                mask |= 1 << (position as i8 + distance);
+                if blocked & (1 << (position as i8 + distance)) != 0 {
+                    obstructed = true;
+                }
+                distance -= 9;
+            }
+        }
+
+        // southeast loop
+        obstructed = false;
+        if (position > 7) && (position % 8 < 7) {
+            distance = -7;
+            //check that it doesn't get too low or hit anything
+            while ((position as i8 + distance) >= 0)
+                && ((position as i8 + distance) % 8 > 0)
+                && !obstructed
+            {
+                mask |= 1 << (position as i8 + distance);
+                if blocked & (1 << (position as i8 + distance)) != 0 {
+                    obstructed = true;
+                }
+                distance -= 7;
+            }
+        }
+        moves.push(mask);
+    }
+    (blockers, moves)
 }
 
 // fn bishop_moves() -> Vec<u64> {
@@ -880,24 +962,49 @@ fn print_binary_board(value: u64) {
 }
 
 #[cfg(test)]
+
 #[test]
-fn trymagic() {
-    let (blockers, legals) = rook_moves(0);
-    let map1 = create_first_map(&blockers, &legals);
-    let map2 = create_second_map(&map1);
+fn better_magic() {
 
-    let (table, magic) = one_magic(&map2);
+    for i in 0..64 {
+    let (table, magic) = find_magics(crate::WHITE_ROOK, i);
+    }
+    for i in 0..64 {
+    let (table, magic) = find_magics(crate::WHITE_BISHOP, i);
+    }
+let (blockers, _legals) = rook_moves(0);
+let (table, magic) = find_magics(crate::WHITE_ROOK, 0);
 
-    println!("magic: {magic}");
-    println!("");
-    print_binary_board(blockers[4000]);
-    println!("");
+println!("");
+println!("Blocker: ");
+println!("");
+print_binary_board(blockers[0]);
+println!("");
 
-    let index = (blockers[4000].wrapping_mul(magic)) >> 52;
+    let index = (blockers[0].wrapping_mul(magic)) >> (64 - RBITS[0]);
     println!("Attacks: ");
     println!("");
     print_binary_board(table[index as usize]);
+println!("");
+
+let (blockers, _legals) = rook_moves(26);
+let (table, magic) = find_magics(crate::WHITE_ROOK, 26);
+
+println!("");
+println!("Blocker: ");
+println!("");
+print_binary_board(blockers[26]);
+println!("");
+
+    let index = (blockers[26].wrapping_mul(magic)) >> (64 - RBITS[26]);
+    println!("Attacks: ");
     println!("");
+    print_binary_board(table[index as usize]);
+println!("");
+
+
+
+
 }
 
 #[test]
