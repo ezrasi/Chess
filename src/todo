@@ -1,4 +1,5 @@
 12/27/24:
+  Add comments to bitboard.rs
   Create movegen function with helpers for all pieces (pawns, knights, etc). Takes in a board state and returns all legal moves
 
 12/26/24:
