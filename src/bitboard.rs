@@ -1,5 +1,5 @@
-use crate::{board, Board, BLACK_BISHOP, BLACK_KNIGHT, WHITE_BISHOP};
 use std::collections::HashMap;
+use crate::board::*;
 use std::collections::HashSet;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -380,15 +380,36 @@ const BBITS: [u8; 64] = [
     5, 5, 7, 9, 9, 7, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 6,
 ];
 
+fn init_bitboards() -> ((Vec<Vec<u64>>, Vec<u64>), (Vec<Vec<u64>>, Vec<u64>)) {
+    let mut rook_attacks = Vec::new();
+    let mut rook_magics = Vec::new();
+    let mut bishop_attacks = Vec::new();
+    let mut bishop_magics = Vec::new();
+
+    for i in 0..64 {
+        let (table, magic) = find_magics(WHITE_ROOK, i);
+        rook_attacks.push(table);
+        rook_magics.push(magic);
+    }
+
+    for i in 0..64 {
+        let (table, magic) = find_magics(WHITE_BISHOP, i);
+        bishop_attacks.push(table);
+        bishop_magics.push(magic);
+    }
+
+    ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics))
+
+}
 fn find_magics(piece: u8, position: u8) -> (Vec<u64>, u64) {
     let (blockers, attacks) = match piece {
-        crate::WHITE_ROOK | crate::BLACK_ROOK => rook_moves(position),
-        crate::WHITE_BISHOP | crate::BLACK_BISHOP => bishop_moves(position),
+        WHITE_ROOK => rook_moves(position),
+        WHITE_BISHOP => bishop_moves(position),
         _ => panic!("Can't find magics for non-sliding pieces"),
     };
     let on_bits = match piece {
-        crate::WHITE_ROOK | crate::BLACK_ROOK => RBITS[position as usize],
-        crate::WHITE_BISHOP | crate::BLACK_BISHOP => BBITS[position as usize],
+        WHITE_ROOK => RBITS[position as usize],
+        WHITE_BISHOP => BBITS[position as usize],
         _ => panic!("Can't find magics for non-sliding pieces"),
     };
 
@@ -479,10 +500,10 @@ fn sliding_attacks(piece: u8, position: usize) -> () {
     // for i in 0..64 {
 
     // }
-    let mut blocks = blockers(crate::WHITE_ROOK, 0);
+    let mut blocks = blockers(WHITE_ROOK, 0);
 
     result.push(blocks);
-    blocks = blockers(crate::WHITE_ROOK, 1);
+    blocks = blockers(WHITE_ROOK, 1);
     result.push(blocks);
     append_vector_to_file(result.as_slice());
 }
@@ -585,15 +606,15 @@ fn set_bit_positions(mut number: u64) -> Vec<u8> {
 fn blockers(piece: u8, position: usize) -> Vec<u64> {
     let mut mask: u64;
     match piece {
-        crate::WHITE_BISHOP | crate::BLACK_BISHOP => {
+        WHITE_BISHOP | BLACK_BISHOP => {
             mask = BISHOP_MOVE_MASKS[position];
         }
 
-        crate::WHITE_ROOK | crate::BLACK_ROOK => {
+        WHITE_ROOK | BLACK_ROOK => {
             mask = ROOK_MOVE_MASKS[position];
         }
 
-        crate::WHITE_QUEEN | crate::BLACK_QUEEN => {
+        WHITE_QUEEN | BLACK_QUEEN => {
             mask = QUEEN_MOVE_MASKS[position];
         }
 
@@ -690,7 +711,7 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
 fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
     let mut moves: Vec<u64> = Vec::new();
     let mut mask: u64;
-    let blockers = blockers(crate::WHITE_ROOK, position as usize);
+    let blockers = blockers(WHITE_ROOK, position as usize);
 
     for blocked in blockers.iter() {
         mask = 0;
@@ -763,7 +784,7 @@ fn rook_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
 fn bishop_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
     let mut moves: Vec<u64> = Vec::new();
     let mut mask: u64;
-    let blockers = blockers(crate::WHITE_BISHOP, position as usize);
+    let blockers = blockers(WHITE_BISHOP, position as usize);
 
     for blocked in blockers.iter() {
         mask = 0;
@@ -964,16 +985,37 @@ fn print_binary_board(value: u64) {
 #[cfg(test)]
 
 #[test]
+fn init() {
+let ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics)) = init_bitboards();
+
+let blockers = blockers(WHITE_ROOK, 20);
+
+println!("");
+println!("Blocker: ");
+println!("");
+print_binary_board(blockers[1000]);
+println!("");
+
+    let index = (blockers[1000].wrapping_mul(rook_magics[20])) >> (64 - RBITS[20]);
+    println!("Attacks: ");
+    println!("");
+    print_binary_board(rook_attacks[20][index as usize]);
+println!("");
+
+
+}
+
+#[test]
 fn better_magic() {
 
     for i in 0..64 {
-    let (table, magic) = find_magics(crate::WHITE_ROOK, i);
+    let (table, magic) = find_magics(WHITE_ROOK, i);
     }
     for i in 0..64 {
-    let (table, magic) = find_magics(crate::WHITE_BISHOP, i);
+    let (table, magic) = find_magics(WHITE_BISHOP, i);
     }
 let (blockers, _legals) = rook_moves(0);
-let (table, magic) = find_magics(crate::WHITE_ROOK, 0);
+let (table, magic) = find_magics(WHITE_ROOK, 0);
 
 println!("");
 println!("Blocker: ");
@@ -988,7 +1030,7 @@ println!("");
 println!("");
 
 let (blockers, _legals) = rook_moves(26);
-let (table, magic) = find_magics(crate::WHITE_ROOK, 26);
+let (table, magic) = find_magics(WHITE_ROOK, 26);
 
 println!("");
 println!("Blocker: ");
@@ -1101,19 +1143,18 @@ fn rook_legal_bitboards() {
 
 #[test]
 fn mask() {
-    blockers(crate::WHITE_ROOK, 0);
+    blockers(WHITE_ROOK, 0);
 }
 
 #[test]
 fn generate_attacks() {
-    use crate::WHITE_ROOK;
+    use WHITE_ROOK;
 
     sliding_attacks(WHITE_ROOK, 0);
 }
 
 #[test]
 fn blocker_list() {
-    use crate::{WHITE_KNIGHT, WHITE_ROOK};
     let mut blocks = blockers(WHITE_ROOK, 1);
 
     for elem in &blocks {
