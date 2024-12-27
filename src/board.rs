@@ -3,45 +3,6 @@
 // can reuse mailbox move generation cod (with modification) to build attack masks from occupancy masks
 
 //true = white and false = black. This enables the ! operator for opposite color.
-//piece codes
-pub const WHITE_PAWN: u8 = 0b00000101;
-pub const WHITE_KNIGHT: u8 = 0b00001001;
-pub const WHITE_BISHOP: u8 = 0b00010001;
-pub const WHITE_ROOK: u8 = 0b00100001;
-pub const WHITE_QUEEN: u8 = 0b01000001;
-pub const WHITE_KING: u8 = 0b10000001;
-pub const BLACK_PAWN: u8 = 0b00000110;
-pub const BLACK_KNIGHT: u8 = 0b00001010;
-pub const BLACK_BISHOP: u8 = 0b00010010;
-pub const BLACK_ROOK: u8 = 0b00100010;
-pub const BLACK_QUEEN: u8 = 0b01000010;
-pub const BLACK_KING: u8 = 0b10000010;
-
-//special move codes
-const QUIET_MOVE: u8 = 0b0000;
-const DOUBLE_PAWN_PUSH: u8 = 0b0001;
-const KINGSIDE_CASTLE: u8 = 0b0010;
-const QUEENSIDE_CASTLE: u8 = 0b0011;
-const CAPTURE: u8 = 0b0100;
-const EN_PASSANT: u8 = 0b0101;
-const KNIGHT_PROMO: u8 = 0b1000;
-const BISHOP_PROMO: u8 = 0b1001;
-const ROOK_PROMO: u8 = 0b1010;
-const QUEEN_PROMO: u8 = 0b1011;
-const KNIGHT_PROMO_CAPTURE: u8 = 0b1100;
-const BISHOP_PROMO_CAPTURE: u8 = 0b1101;
-const ROOK_PROMO_CAPTURE: u8 = 0b1110;
-const QUEEN_PROMO_CAPTURE: u8 = 0b1111;
-
-// The Move representation
-#[derive(Debug)]
-struct Move {
-    piece: u8,
-    from: u8,
-    to: u8,
-    color: bool,
-    kind: u8,
-}
 
 // The Board representation.
 #[derive(Debug)]

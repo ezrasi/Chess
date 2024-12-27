@@ -1,5 +1,5 @@
 mod bitboard;
 mod board;
-use board::*;
+mod movegen;
 
 fn main() {}
