@@ -1,5 +1,6 @@
 use crate::constants::*;
 
+// Number of on bits in the blocker mask per square (excludes current square and edges)
 const RBITS: [u8; 64] = [
     12, 11, 11, 11, 11, 11, 11, 12, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11,
     11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11,
@@ -11,6 +12,9 @@ const BBITS: [u8; 64] = [
     5, 5, 7, 9, 9, 7, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 6,
 ];
 
+// Returns rook and bishop attack tables and magics. rook_magics[i] is used to map rook blockers
+// when rook is at position i to the appropriate attack mask in the rook_attacks[i] set of attack
+// boards
 fn init_bitboards() -> ((Vec<Vec<u64>>, Vec<u64>), (Vec<Vec<u64>>, Vec<u64>)) {
     let mut rook_attacks = Vec::new();
     let mut rook_magics = Vec::new();
@@ -32,20 +36,28 @@ fn init_bitboards() -> ((Vec<Vec<u64>>, Vec<u64>), (Vec<Vec<u64>>, Vec<u64>)) {
     ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics))
 
 }
+
+// Returns an attack table and associated magic number for one piece and position
 fn find_magics(piece: u8, position: u8) -> (Vec<u64>, u64) {
+    // Gets list of blockers and attack maps. blockers[i] maps to attacks[i]
     let (blockers, attacks) = match piece {
         WHITE_ROOK => rook_moves(position),
         WHITE_BISHOP => bishop_moves(position),
         _ => panic!("Can't find magics for non-sliding pieces"),
     };
+    // Number of on bits in the piece's occupancy mask determines how big to make the attack mask
+    // table and therefore how much to shift (blocker * magic). The table is 2^n where n is
+    // on_bits.
     let on_bits = match piece {
         WHITE_ROOK => RBITS[position as usize],
         WHITE_BISHOP => BBITS[position as usize],
         _ => panic!("Can't find magics for non-sliding pieces"),
     };
 
+    // Try to build a valid table with a random magic (three combined so we have fewer on bits)
+    // until we find a magic that works
     loop {
-        let magic = fastrand::u64(..) & fastrand::u64(..) & fastrand::u64(..);
+        let mut magic = fastrand::u64(..) & fastrand::u64(..) & fastrand::u64(..);
         if let Ok(table) = build_table(magic, on_bits, &blockers, &attacks) {
             return (table, magic);
         }
@@ -63,8 +75,9 @@ fn build_table(
 ) -> Result<Vec<u64>, TableError> {
     let mut table = vec![0; 1 << on_bits];
     let shifts: u64 = 64 - (on_bits as u64);
+    let blocker_len = blockers.len();
 
-    for i in 0..blockers.len() {
+    for i in 0..blocker_len {
         let product = blockers[i].wrapping_mul(magic);
         let index = (product >> shifts) as usize;
 
@@ -315,6 +328,23 @@ fn print_binary_board(value: u64) {
 
 #[cfg(test)]
 
+#[test]
+fn timed() {
+    use std::hint::black_box;
+    use std::time::Instant;
+    let now = Instant::now();
+    for i in 0..64 {
+        let l = find_magics(WHITE_ROOK, i);
+        black_box(l);
+    }
+    for i in 0..64 {
+        let l = find_magics(WHITE_BISHOP, i);
+        black_box(l);
+    }
+    let elapsed = now.elapsed();
+    println!("Elapsed: {:.2?}", elapsed);
+
+}
 #[test]
 fn init() {
 let ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics)) = init_bitboards();
