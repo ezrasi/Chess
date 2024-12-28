@@ -234,6 +234,46 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
         moves.push(new_move);
     }
 
+    // right captures
+    let mut right_capture: u64 = if board.turn {
+        let mut tmp = (pawns << 9) & !A_FILE & !EIGHTH_RANK & !board.white;
+        let mut black_targets = board.black;
+        if board.ep_target.is_some() {
+            black_targets |= 1 << board.ep_target.unwrap();
+        }
+        tmp &= black_targets;
+        tmp
+    } else {
+        let mut tmp = (pawns >> 9) & !H_FILE & !FIRST_RANK & !board.black;
+        let mut white_targets = board.white;
+        if board.ep_target.is_some() {
+            white_targets |= 1 << board.ep_target.unwrap();
+        }
+        tmp &= white_targets;
+        tmp
+    };
+    let right_capture_positions = set_bit_positions(right_capture);
+    for destination in right_capture_positions {
+        let move_type = match board.ep_target {
+            Some(ep_square) if destination == ep_square => EN_PASSANT,
+            _ => CAPTURE,
+        };
+        let from = if board.turn {
+            destination - 9
+        } else {
+            destination + 9
+        };
+        let new_move = Move {
+            piece,
+            from,
+            to: destination,
+            color: board.turn,
+            kind: move_type,
+        };
+        // if doesnt leave king in check
+        moves.push(new_move);
+    }
+
     moves
 }
 
@@ -726,6 +766,20 @@ mod tests {
     use super::*;
     use crate::utils::*;
 
+    #[test]
+    fn pawn_no_promo() {
+        let mut board = create_test_board();
+        board.white_pawn = (1 << 10) | (1 << 17) | (1 << 28) | (1 << 36) |  (1 << 38) | (1 << 42);
+        board.white |= board.white_pawn;
+        board.black_pawn = (1 << 24) | (1 << 25) | (1 << 35) | (1 << 37) | (1 << 49);
+        board.black |= board.black_pawn;
+        board.ep_target = Some(45);
+        let moves = pawn_moves(&board);
+        for one_move in moves {
+            println!("{:?}", one_move);
+        }
+
+    }
     #[test]
     fn pawn_left_captures() {
         let mut board = create_test_board();
