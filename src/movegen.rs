@@ -110,27 +110,76 @@ fn legal_moves(board: &Board) -> Vec<Move> {
 }
 */
 
-/* A GOOD REFACTORING GUIDE FOR PAWN_MOVES
-* fn calculate_left_captures(board: &Board, pawns: u64) -> u64 {
-    let (shift, file_mask, rank_mask, friendly_pieces, enemy_pieces) = if board.turn {
-        (7, !H_FILE, !EIGHTH_RANK, board.white, board.black)
+/* A GOOD REFACTORING GUIDE FOR PAWN_MOVES (from Claude)
+fn pawn_moves(board: &Board) -> Vec<Move> {
+    let (pawns, piece, forward_shift, double_start_rank, promotion_rank) = if board.turn {
+        (board.white_pawn, WHITE_PAWN, 8, SECOND_RANK, !EIGHTH_RANK)
     } else {
-        (-7, !A_FILE, !FIRST_RANK, board.black, board.white)
+        (board.black_pawn, BLACK_PAWN, -8, SEVENTH_RANK, !FIRST_RANK)
     };
 
-    let mut targets = enemy_pieces;
-    if let Some(ep_square) = board.ep_target {
-        targets |= 1 << ep_square;
+    let empty = !(board.white | board.black);
+    let mut moves = Vec::new();
+
+    // Helper function to create moves
+    let create_move = |from: u8, to: u8, kind: u8| Move {
+        piece, from, to, color: board.turn, kind
+    };
+
+    // Single moves
+    let single_moves = shift_bits(pawns, forward_shift) & empty & promotion_rank;
+    for to in set_bit_positions(single_moves) {
+        moves.push(create_move(
+            (to as i8 - forward_shift) as u8,
+            to,
+            QUIET_MOVE
+        ));
     }
 
-    let possible_captures = if shift > 0 {
-        pawns << shift
-    } else {
-        pawns >> shift.abs()
+    // Double moves
+    let double_moves = shift_bits(
+        shift_bits(pawns & double_start_rank, forward_shift) & empty,
+        forward_shift
+    ) & empty;
+    for to in set_bit_positions(double_moves) {
+        moves.push(create_move(
+            (to as i8 - forward_shift * 2) as u8,
+            to,
+            DOUBLE_PAWN_PUSH
+        ));
+    }
+
+    // Captures
+    let enemy = if board.turn { board.black } else { board.white };
+    let enemy_with_ep = enemy | board.ep_target.map_or(0, |sq| 1 << sq);
+
+    // Helper for capture moves
+    let add_captures = |shift: i8, file_mask: u64| {
+        let captures = shift_bits(pawns, shift) & file_mask & promotion_rank & enemy_with_ep;
+        for to in set_bit_positions(captures) {
+            let kind = if Some(to) == board.ep_target { EN_PASSANT } else { CAPTURE };
+            moves.push(create_move(
+                (to as i8 - shift) as u8,
+                to,
+                kind
+            ));
+        }
     };
 
-    possible_captures & file_mask & rank_mask & !friendly_pieces & targets
-} */
+    add_captures(7, !H_FILE);  // Left captures
+    add_captures(9, !A_FILE);  // Right captures
+
+    moves
+}
+
+// Helper function to handle both positive and negative shifts
+fn shift_bits(bits: u64, shift: i8) -> u64 {
+    if shift >= 0 {
+        bits << shift
+    } else {
+        bits >> -shift
+    }
+}*/
 fn pawn_moves(board: &Board) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
 

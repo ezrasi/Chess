@@ -1,4 +1,4 @@
-use crate::constants::*;
+use crate::utils::*;
 
 // Number of on bits in the blocker mask per square (excludes current square and edges)
 const RBITS: [u8; 64] = [
@@ -15,7 +15,7 @@ const BBITS: [u8; 64] = [
 // Returns rook and bishop attack tables and magics. rook_magics[i] is used to map rook blockers
 // when rook is at position i to the appropriate attack mask in the rook_attacks[i] set of attack
 // boards
-fn init_bitboards() -> ((Vec<Vec<u64>>, Vec<u64>), (Vec<Vec<u64>>, Vec<u64>)) {
+pub fn init_bitboards() -> ((Vec<Vec<u64>>, Vec<u64>), (Vec<Vec<u64>>, Vec<u64>)) {
     let mut rook_attacks = Vec::new();
     let mut rook_magics = Vec::new();
     let mut bishop_attacks = Vec::new();
@@ -34,7 +34,6 @@ fn init_bitboards() -> ((Vec<Vec<u64>>, Vec<u64>), (Vec<Vec<u64>>, Vec<u64>)) {
     }
 
     ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics))
-
 }
 
 // Returns an attack table and associated magic number for one piece and position
@@ -115,7 +114,7 @@ fn blockers(piece: u8, position: usize) -> Vec<u64> {
             mask = ROOK_MOVE_MASKS[position];
         }
 
-              _ => panic!("blockers didn't receive sliding piece"),
+        _ => panic!("blockers didn't receive sliding piece"),
     }
 
     // Get rid of the appropriate edges for the blocker mask
@@ -311,168 +310,145 @@ fn bishop_moves(position: u8) -> (Vec<u64>, Vec<u64>) {
     (blockers, moves)
 }
 
-fn print_binary_board(value: u64) {
-    let binary_string = format!("{:064b}", value); // Convert to a 64-bit binary string
-    let reversed_binary_string: String = binary_string.chars().rev().collect(); // Reverse the entire string
-
-    // Print chunks in reverse order directly
-    reversed_binary_string
-        .as_bytes()
-        .chunks(8)
-        .rev()
-        .for_each(|chunk| {
-            println!("{}", std::str::from_utf8(chunk).unwrap());
-        });
-}
-
-
 #[cfg(test)]
-
-#[test]
-fn timed() {
-    use std::hint::black_box;
-    use std::time::Instant;
-    let now = Instant::now();
-    for i in 0..64 {
-        let l = find_magics(WHITE_ROOK, i);
-        black_box(l);
+mod tests {
+    use super::*;
+    #[test]
+    fn timed() {
+        use std::hint::black_box;
+        use std::time::Instant;
+        let now = Instant::now();
+        for i in 0..64 {
+            let l = find_magics(WHITE_ROOK, i);
+            black_box(l);
+        }
+        for i in 0..64 {
+            let l = find_magics(WHITE_BISHOP, i);
+            black_box(l);
+        }
+        let elapsed = now.elapsed();
+        println!("Elapsed: {:.2?}", elapsed);
     }
-    for i in 0..64 {
-        let l = find_magics(WHITE_BISHOP, i);
-        black_box(l);
+    #[test]
+    fn init() {
+        let ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics)) = init_bitboards();
+
+        let blocker = blockers(WHITE_ROOK, 20);
+
+        println!("");
+        println!("Rook Blocker: ");
+        println!("");
+        print_binary_board(blocker[1000]);
+        println!("");
+
+        let index = (blocker[1000].wrapping_mul(rook_magics[20])) >> (64 - RBITS[20]);
+        println!("Rook Attacks: ");
+        println!("");
+        print_binary_board(rook_attacks[20][index as usize]);
+        println!("");
+
+        let blocker = blockers(WHITE_BISHOP, 21);
+
+        println!("");
+        println!("Bishop Blocker: ");
+        println!("");
+        print_binary_board(blocker[100]);
+        println!("");
+
+        let index = (blocker[100].wrapping_mul(bishop_magics[21])) >> (64 - BBITS[21]);
+        println!("Bishop Attacks: ");
+        println!("");
+        print_binary_board(bishop_attacks[21][index as usize]);
+        println!("");
     }
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
 
-}
-#[test]
-fn init() {
-let ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics)) = init_bitboards();
+    #[test]
+    fn better_magic() {
+        for i in 0..64 {
+            let (table, magic) = find_magics(WHITE_ROOK, i);
+        }
+        for i in 0..64 {
+            let (table, magic) = find_magics(WHITE_BISHOP, i);
+        }
+        let (blockers, _legals) = rook_moves(0);
+        let (table, magic) = find_magics(WHITE_ROOK, 0);
 
-let blocker = blockers(WHITE_ROOK, 20);
+        println!("");
+        println!("Blocker: ");
+        println!("");
+        print_binary_board(blockers[0]);
+        println!("");
 
-println!("");
-println!("Rook Blocker: ");
-println!("");
-print_binary_board(blocker[1000]);
-println!("");
+        let index = (blockers[0].wrapping_mul(magic)) >> (64 - RBITS[0]);
+        println!("Attacks: ");
+        println!("");
+        print_binary_board(table[index as usize]);
+        println!("");
 
-    let index = (blocker[1000].wrapping_mul(rook_magics[20])) >> (64 - RBITS[20]);
-    println!("Rook Attacks: ");
-    println!("");
-    print_binary_board(rook_attacks[20][index as usize]);
-println!("");
-    
-let blocker = blockers(WHITE_BISHOP, 21);
+        let (blockers, _legals) = rook_moves(26);
+        let (table, magic) = find_magics(WHITE_ROOK, 26);
 
-println!("");
-println!("Bishop Blocker: ");
-println!("");
-print_binary_board(blocker[100]);
-println!("");
+        println!("");
+        println!("Blocker: ");
+        println!("");
+        print_binary_board(blockers[26]);
+        println!("");
 
-    let index = (blocker[100].wrapping_mul(bishop_magics[21])) >> (64 - BBITS[21]);
-    println!("Bishop Attacks: ");
-    println!("");
-    print_binary_board(bishop_attacks[21][index as usize]);
-println!("");
-
-
-}
-
-#[test]
-fn better_magic() {
-
-    for i in 0..64 {
-    let (table, magic) = find_magics(WHITE_ROOK, i);
+        let index = (blockers[26].wrapping_mul(magic)) >> (64 - RBITS[26]);
+        println!("Attacks: ");
+        println!("");
+        print_binary_board(table[index as usize]);
+        println!("");
     }
-    for i in 0..64 {
-    let (table, magic) = find_magics(WHITE_BISHOP, i);
+    #[test]
+    fn rook_legal_bitboards() {
+        // For position 0
+        let (blockers, legals) = rook_moves(0);
+
+        println!("POSITION 0: ");
+
+        println!("Blocker 0: ");
+        print_binary_board(blockers[0]);
+        println!("Legal 0:");
+        print_binary_board(legals[0]);
+
+        println!("Blocker 300: ");
+        print_binary_board(blockers[300]);
+        println!("Legal 300:");
+        print_binary_board(legals[300]);
+
+        println!("Blocker 2051: ");
+        print_binary_board(blockers[2051]);
+        println!("Legal 2051:");
+        print_binary_board(legals[2051]);
+
+        println!("Blocker 4003: ");
+        print_binary_board(blockers[4003]);
+        println!("Legal 4003:");
+        print_binary_board(legals[4003]);
+
+        // For position 27
+        let (blockers, legals) = rook_moves(27);
+        println!("POSITION 27: ");
+
+        println!("Blocker 1: ");
+        print_binary_board(blockers[1]);
+        println!("Legal 1:");
+        print_binary_board(legals[1]);
+
+        println!("Blocker 451: ");
+        print_binary_board(blockers[451]);
+        println!("Legal 451:");
+        print_binary_board(legals[451]);
+
+        println!("Blocker 713: ");
+        print_binary_board(blockers[713]);
+        println!("Legal 713:");
+        print_binary_board(legals[713]);
+
+        println!("Blocker 1010: ");
+        print_binary_board(blockers[1010]);
+        println!("Legal 1010:");
+        print_binary_board(legals[1010]);
     }
-let (blockers, _legals) = rook_moves(0);
-let (table, magic) = find_magics(WHITE_ROOK, 0);
-
-println!("");
-println!("Blocker: ");
-println!("");
-print_binary_board(blockers[0]);
-println!("");
-
-    let index = (blockers[0].wrapping_mul(magic)) >> (64 - RBITS[0]);
-    println!("Attacks: ");
-    println!("");
-    print_binary_board(table[index as usize]);
-println!("");
-
-let (blockers, _legals) = rook_moves(26);
-let (table, magic) = find_magics(WHITE_ROOK, 26);
-
-println!("");
-println!("Blocker: ");
-println!("");
-print_binary_board(blockers[26]);
-println!("");
-
-    let index = (blockers[26].wrapping_mul(magic)) >> (64 - RBITS[26]);
-    println!("Attacks: ");
-    println!("");
-    print_binary_board(table[index as usize]);
-println!("");
-
-
-
-
 }
-#[test]
-fn rook_legal_bitboards() {
-    // For position 0
-    let (blockers, legals) = rook_moves(0);
-
-    println!("POSITION 0: ");
-
-    println!("Blocker 0: ");
-    print_binary_board(blockers[0]);
-    println!("Legal 0:");
-    print_binary_board(legals[0]);
-
-    println!("Blocker 300: ");
-    print_binary_board(blockers[300]);
-    println!("Legal 300:");
-    print_binary_board(legals[300]);
-
-    println!("Blocker 2051: ");
-    print_binary_board(blockers[2051]);
-    println!("Legal 2051:");
-    print_binary_board(legals[2051]);
-
-    println!("Blocker 4003: ");
-    print_binary_board(blockers[4003]);
-    println!("Legal 4003:");
-    print_binary_board(legals[4003]);
-
-    // For position 27
-    let (blockers, legals) = rook_moves(27);
-    println!("POSITION 27: ");
-
-    println!("Blocker 1: ");
-    print_binary_board(blockers[1]);
-    println!("Legal 1:");
-    print_binary_board(legals[1]);
-
-    println!("Blocker 451: ");
-    print_binary_board(blockers[451]);
-    println!("Legal 451:");
-    print_binary_board(legals[451]);
-
-    println!("Blocker 713: ");
-    print_binary_board(blockers[713]);
-    println!("Legal 713:");
-    print_binary_board(legals[713]);
-
-    println!("Blocker 1010: ");
-    print_binary_board(blockers[1010]);
-    println!("Legal 1010:");
-    print_binary_board(legals[1010]);
-}
-
- 

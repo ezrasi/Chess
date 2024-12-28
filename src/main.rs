@@ -1,6 +1,6 @@
 mod bitboard;
 mod board;
 mod movegen;
-mod constants;
+mod utils;
 
 fn main() {}

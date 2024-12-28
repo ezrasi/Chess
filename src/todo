@@ -1,3 +1,8 @@
+12/28/24:
+  Finish pawn_moves (all the kinds of promotions). Finish movegen functions for each other piece.
+  Gonna also need a function that takes in a board and a move and returns the
+  updated board after the move is made. Write in_check. 
+
 12/27/24:
   Add comments to bitboard.rs
   Create movegen function with helpers for all pieces (pawns, knights, etc). Takes in a board state and returns all legal moves
