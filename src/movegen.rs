@@ -183,59 +183,68 @@ fn shift_bits(bits: u64, shift: i8) -> u64 {
 fn pawn_moves(board: &Board) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
 
-    let (pawns, piece);
-
-    if board.turn {
-        pawns = board.white_pawn;
-        piece = WHITE_PAWN;
+    let (pawns, piece) = if board.turn {
+        (board.white_pawn, WHITE_PAWN)
     } else {
-        pawns = board.black_pawn;
-        piece = BLACK_PAWN;
+        (board.black_pawn, BLACK_PAWN)
+    };
+
+    let is_promo = |dest: u8| -> bool {
+        if board.turn {
+            dest >= 56
+        } else {
+            dest <= 7
+        }
+    };
+
+    let add_promo_moves = |moves: &mut Vec<Move>, from: u8, to: u8, is_capture: bool| {
+        let kinds = if is_capture {
+            vec![
+                KNIGHT_PROMO_CAPTURE,
+                BISHOP_PROMO_CAPTURE,
+                ROOK_PROMO_CAPTURE,
+                QUEEN_PROMO_CAPTURE,
+            ]
+        } else {
+            vec![KNIGHT_PROMO, BISHOP_PROMO, ROOK_PROMO, QUEEN_PROMO]
+        };
+
+        for kind in kinds {
+            moves.push(Move {
+                piece,
+                from,
+                to,
+                color: board.turn,
+                kind,
+            });
+        }
+    };
+    let add_regular_move = |moves: &mut Vec<Move>, from: u8, to: u8, kind: u8| {
+        moves.push(Move {
+            piece,
+            from,
+            to,
+            color: board.turn,
+            kind,
+        });
     };
 
     // forward single move
     let mut forward_single_move: u64 = if board.turn { pawns << 8 } else { pawns >> 8 };
     forward_single_move &= !(board.white | board.black);
     let forward_single_positions = set_bit_positions(forward_single_move);
+
     for destination in forward_single_positions {
         let from = if board.turn {
             destination - 8
         } else {
             destination + 8
         };
-        let mut promo = false;
-        if board.turn {
-            if destination >= 56 {
-                promo = true;
-            }
+
+        if is_promo(destination) {
+            add_promo_moves(&mut moves, from, destination, false);
         } else {
-            if destination <= 7 {
-                promo = true;
-            }
-        }
-        if !promo {
-            let new_move = Move {
-                piece,
-                from,
-                to: destination,
-                color: board.turn,
-                kind: QUIET_MOVE,
-            };
-            // make the move, make sure it doesnt leave king in check
-            moves.push(new_move);
-        } else {
-            let kinds = vec![KNIGHT_PROMO, BISHOP_PROMO, ROOK_PROMO, QUEEN_PROMO];
-            for kind in kinds {
-                let new_move = Move {
-                    piece,
-                    from,
-                    to: destination,
-                    color: board.turn,
-                    kind,
-                };
-                // make the move, make sure it doesnt leave king in check
-                moves.push(new_move);
-            }
+            add_regular_move(&mut moves, from, destination, QUIET_MOVE);
         }
     }
 
@@ -247,25 +256,18 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
     };
     forward_double_move &= !(board.white | board.black);
     let forward_double_positions = set_bit_positions(forward_double_move);
+
     for destination in forward_double_positions {
         let from = if board.turn {
             destination - 16
         } else {
             destination + 16
         };
-        let new_move = Move {
-            piece,
-            from,
-            to: destination,
-            color: board.turn,
-            kind: DOUBLE_PAWN_PUSH,
-        };
-        // make the move, make sure it doesnt leave king in check
-        moves.push(new_move);
+        add_regular_move(&mut moves, from, destination, DOUBLE_PAWN_PUSH);
     }
 
     // left capture
-    let mut left_capture: u64 = if board.turn {
+    let left_capture: u64 = if board.turn {
         let mut tmp = (pawns << 7) & !H_FILE & !board.white;
         let mut black_targets = board.black;
         if board.ep_target.is_some() {
@@ -288,55 +290,22 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
             Some(ep_square) if destination == ep_square => EN_PASSANT,
             _ => CAPTURE,
         };
-        let mut promo = false;
-        if board.turn {
-            if destination >= 56 {
-                promo = true;
-            }
-        } else {
-            if destination <= 7 {
-                promo = true;
-            }
-        }
 
         let from = if board.turn {
             destination - 7
         } else {
             destination + 7
         };
-        if !promo {
-            let new_move = Move {
-                piece,
-                from,
-                to: destination,
-                color: board.turn,
-                kind: move_type,
-            };
-            // if doesnt leave king in check
-            moves.push(new_move);
+
+        if is_promo(destination) {
+            add_promo_moves(&mut moves, from, destination, true);
         } else {
-            let kinds = vec![
-                KNIGHT_PROMO_CAPTURE,
-                BISHOP_PROMO_CAPTURE,
-                ROOK_PROMO_CAPTURE,
-                QUEEN_PROMO_CAPTURE,
-            ];
-            for kind in kinds {
-                let new_move = Move {
-                    piece,
-                    from,
-                    to: destination,
-                    color: board.turn,
-                    kind,
-                };
-                // make the move, make sure it doesnt leave king in check
-                moves.push(new_move);
-            }
+            add_regular_move(&mut moves, from, destination, move_type);
         }
     }
 
     // right captures
-    let mut right_capture: u64 = if board.turn {
+    let right_capture: u64 = if board.turn {
         let mut tmp = (pawns << 9) & !A_FILE & !board.white;
         let mut black_targets = board.black;
         if board.ep_target.is_some() {
@@ -359,52 +328,17 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
             Some(ep_square) if destination == ep_square => EN_PASSANT,
             _ => CAPTURE,
         };
-        let mut promo = false;
-        if board.turn {
-            if destination >= 56 {
-                promo = true;
-            }
-        } else {
-            if destination <= 7 {
-                promo = true;
-            }
-        }
 
         let from = if board.turn {
             destination - 9
         } else {
             destination + 9
         };
-        if !promo {
-        let new_move = Move {
-            piece,
-            from,
-            to: destination,
-            color: board.turn,
-            kind: move_type,
-        };
-        // if doesnt leave king in check
-        moves.push(new_move);
+        if is_promo(destination) {
+            add_promo_moves(&mut moves, from, destination, true);
         } else {
-            let kinds = vec![
-                KNIGHT_PROMO_CAPTURE,
-                BISHOP_PROMO_CAPTURE,
-                ROOK_PROMO_CAPTURE,
-                QUEEN_PROMO_CAPTURE,
-            ];
-            for kind in kinds {
-                let new_move = Move {
-                    piece,
-                    from,
-                    to: destination,
-                    color: board.turn,
-                    kind,
-                };
-                // make the move, make sure it doesnt leave king in check
-                moves.push(new_move);
-            }
+            add_regular_move(&mut moves, from, destination, move_type);
         }
-
     }
 
     moves
@@ -900,8 +834,38 @@ mod tests {
     use crate::utils::*;
 
     #[test]
-    fn promo_right_capture() {
+    fn black_pawn_moves() {
+        let mut board = create_test_board();
+         board.black_pawn |= (1 << 48) | (1 << 33) | (1 << 26) | (1 << 13);
+        board.black |= board.black_pawn;
 
+        board.white_pawn |= (1 << 41) | (1 << 24) | (1 << 18) | (1 << 4); 
+        board.white |= board.white_pawn;
+        board.turn = false;
+        board.ep_target = Some(19);
+
+        let moves = pawn_moves(&board);
+        for one_move in moves.iter() {
+            println!("{:?}", one_move);
+        }
+        assert_eq!(14, moves.len());
+    }
+
+    #[test]
+    fn white_pawn_moves() {
+        let mut board = create_test_board();
+        board.white_pawn |= (1 << 8) | (1 << 25) | (1 << 42) | (1 << 54) | (1 << 55);
+        board.white |= board.white_pawn;
+        board.black_pawn |= (1 << 32) | (1 << 34) | (1 << 50) | (1 << 62) | (1 << 63);
+        board.black |= board.black_pawn;
+        let moves = pawn_moves(&board);
+        for one_move in moves.iter() {
+            println!("{:?}", one_move);
+        }
+        assert_eq!(13, moves.len());
+    }
+    #[test]
+    fn promo_right_capture() {
         let mut board = create_test_board();
         board.white_pawn = (1 << 49) | (1 << 51) | (1 << 53);
         board.white |= board.white_pawn;
