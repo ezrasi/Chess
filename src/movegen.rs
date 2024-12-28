@@ -38,7 +38,7 @@ pub struct Board {
     pub halfmove: u16,
     pub fullmove: u16,
 }
-
+/*
 // Takes in a board state and returns a Vec of all legal moves
 fn legal_moves(board: &Board) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
@@ -108,7 +108,7 @@ fn legal_moves(board: &Board) -> Vec<Move> {
 
     moves
 }
-
+*/
 fn pawn_moves(board: &Board) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
 
@@ -128,30 +128,39 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
     } else {
         (pawns >> 8) & !FIRST_RANK
     };
-    forward_single_move &= !(board.white & board.black);
+    forward_single_move &= !(board.white | board.black);
     let forward_single_positions = set_bit_positions(forward_single_move);
     for destination in forward_single_positions {
-        let from = if board.turn { destination -8 } else { destination + 8 };
+        let from = if board.turn {
+            destination - 8
+        } else {
+            destination + 8
+        };
         let new_move = Move {
             piece,
-            from,            to: destination,
+            from,
+            to: destination,
             color: board.turn,
             kind: QUIET_MOVE,
         };
-        // make the move, make sure it doesnt leave king in check 
+        // make the move, make sure it doesnt leave king in check
         moves.push(new_move);
     }
 
     // forward double move
     let mut forward_double_move: u64 = if board.turn {
-        (((pawns & SECOND_RANK) << 8) & !(board.white & board.black)) << 8
+        (((pawns & SECOND_RANK) << 8) & !(board.white | board.black)) << 8
     } else {
-        (((pawns & SEVENTH_RANK) >> 8) & !(board.white & board.black)) >> 8
+        (((pawns & SEVENTH_RANK) >> 8) & !(board.white | board.black)) >> 8
     };
-    forward_double_move &= !(board.white & board.black);
-    let forward_double_positions = set_bit_positions(forward_double_move);
+        forward_double_move &= !(board.white | board.black);
+        let forward_double_positions = set_bit_positions(forward_double_move);
     for destination in forward_double_positions {
-        let from = if board.turn { destination - 16 } else { destination + 16 };
+        let from = if board.turn {
+            destination - 16
+        } else {
+            destination + 16
+        };
         let new_move = Move {
             piece,
             from,
@@ -159,13 +168,13 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
             color: board.turn,
             kind: DOUBLE_PAWN_PUSH,
         };
-        // make the move, make sure it doesnt leave king in check 
+        // make the move, make sure it doesnt leave king in check
         moves.push(new_move);
     }
 
     moves
 }
-
+/*
 fn king_moves(board: &Board, position: u8) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
 
@@ -619,6 +628,7 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
     }
     moves
 }
+*/
 
 fn create_test_board() -> Board {
     Board {
@@ -645,5 +655,26 @@ fn create_test_board() -> Board {
         ep_target: None,
         halfmove: 0,
         fullmove: 0,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::create_test_board;
+    use super::pawn_moves;
+    use crate::utils::*;
+    #[test]
+    fn first_rank_pawns() {
+        let mut board = create_test_board();
+        board.white_pawn = SECOND_RANK;
+        board.white_pawn |= 1 << 18;
+        board.white |= board.white_pawn;
+        board.black_pawn = FOURTH_RANK;
+        board.black |= board.black_pawn;
+        board.black &= !(B_FILE | F_FILE);
+        let moves = pawn_moves(&board);
+        for one_move in moves {
+            println!("{:?}", one_move);
+        }
     }
 }
