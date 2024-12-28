@@ -2,7 +2,7 @@
 // It takes in a u64 and outputs a Vec of the indices of the on bits
 pub fn set_bit_positions(mut number: u64) -> Vec<u8> {
     let mut result: Vec<u8> = Vec::new();
-    for i in 0..63 {
+    for i in 0..64 {
         if (number & 1) == 1 {
             result.push(i);
         }
