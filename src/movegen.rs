@@ -109,6 +109,28 @@ fn legal_moves(board: &Board) -> Vec<Move> {
     moves
 }
 */
+
+/* A GOOD REFACTORING GUIDE FOR PAWN_MOVES
+* fn calculate_left_captures(board: &Board, pawns: u64) -> u64 {
+    let (shift, file_mask, rank_mask, friendly_pieces, enemy_pieces) = if board.turn {
+        (7, !H_FILE, !EIGHTH_RANK, board.white, board.black)
+    } else {
+        (-7, !A_FILE, !FIRST_RANK, board.black, board.white)
+    };
+
+    let mut targets = enemy_pieces;
+    if let Some(ep_square) = board.ep_target {
+        targets |= 1 << ep_square;
+    }
+
+    let possible_captures = if shift > 0 {
+        pawns << shift
+    } else {
+        pawns >> shift.abs()
+    };
+
+    possible_captures & file_mask & rank_mask & !friendly_pieces & targets
+} */
 fn pawn_moves(board: &Board) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
 
@@ -153,8 +175,8 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
     } else {
         (((pawns & SEVENTH_RANK) >> 8) & !(board.white | board.black)) >> 8
     };
-        forward_double_move &= !(board.white | board.black);
-        let forward_double_positions = set_bit_positions(forward_double_move);
+    forward_double_move &= !(board.white | board.black);
+    let forward_double_positions = set_bit_positions(forward_double_move);
     for destination in forward_double_positions {
         let from = if board.turn {
             destination - 16
@@ -172,8 +194,49 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
         moves.push(new_move);
     }
 
+    // left capture
+    let mut left_capture: u64 = if board.turn {
+        let mut tmp = (pawns << 7) & !H_FILE & !EIGHTH_RANK & !board.white;
+        let mut black_targets = board.black;
+        if board.ep_target.is_some() {
+            black_targets |= 1 << board.ep_target.unwrap();
+        }
+        tmp &= black_targets;
+        tmp
+    } else {
+        let mut tmp = (pawns >> 7) & !A_FILE & !FIRST_RANK & !board.black;
+        let mut white_targets = board.white;
+        if board.ep_target.is_some() {
+            white_targets |= 1 << board.ep_target.unwrap();
+        }
+        tmp &= white_targets;
+        tmp
+    };
+    let left_capture_positions = set_bit_positions(left_capture);
+    for destination in left_capture_positions {
+        let move_type = match board.ep_target {
+            Some(ep_square) if destination == ep_square => EN_PASSANT,
+            _ => CAPTURE,
+        };
+        let from = if board.turn {
+            destination - 7
+        } else {
+            destination + 7
+        };
+        let new_move = Move {
+            piece,
+            from,
+            to: destination,
+            color: board.turn,
+            kind: move_type,
+        };
+        // if doesnt leave king in check
+        moves.push(new_move);
+    }
+
     moves
 }
+
 /*
 fn king_moves(board: &Board, position: u8) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
@@ -660,9 +723,22 @@ fn create_test_board() -> Board {
 
 #[cfg(test)]
 mod tests {
-    use super::create_test_board;
-    use super::pawn_moves;
+    use super::*;
     use crate::utils::*;
+
+    #[test]
+    fn pawn_left_captures() {
+        let mut board = create_test_board();
+        board.white_pawn = (1 << 17) | (1 << 28) | (1 << 38) | (1 << 42);
+        board.white |= board.white_pawn;
+        board.black_pawn = (1 << 24) | (1 << 25) | (1 << 37) | (1 << 49);
+        board.black |= board.black_pawn;
+        board.ep_target = Some(45);
+        let moves = pawn_moves(&board);
+        for one_move in moves {
+            println!("{:?}", one_move);
+        }
+    }
     #[test]
     fn first_rank_pawns() {
         let mut board = create_test_board();
