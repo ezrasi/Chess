@@ -1,3 +1,8 @@
+12/29/24:
+  1. Finish in_check (just pawn attacks left to detect)
+  2. make_move (we need this in movegen functions to eliminate illegal moves)
+  3. movegen for non_pawn pieces
+
 12/28/24:
   1. in_check
   2. movegen for non-pawn pieces
