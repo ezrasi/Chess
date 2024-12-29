@@ -1,18 +1,6 @@
 use crate::utils::*;
 use lazy_static::lazy_static;
 
-// Number of on bits in the blocker mask per square (excludes current square and edges)
-const RBITS: [u8; 64] = [
-    12, 11, 11, 11, 11, 11, 11, 12, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11,
-    11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11,
-    11, 10, 10, 10, 10, 10, 10, 11, 12, 11, 11, 11, 11, 11, 11, 12,
-];
-
-const BBITS: [u8; 64] = [
-    6, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 7, 9, 9, 7, 5, 5,
-    5, 5, 7, 9, 9, 7, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 6,
-];
-
 pub struct MagicTables {
     pub rook_attacks: Vec<Vec<u64>>,
     pub rook_magics: Vec<u64>,
@@ -344,38 +332,6 @@ mod tests {
         }
         let elapsed = now.elapsed();
         println!("Elapsed: {:.2?}", elapsed);
-    }
-    #[test]
-    fn init() {
-        let ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics)) = init_bitboards();
-
-        let blocker = blockers(WHITE_ROOK, 20);
-
-        println!("");
-        println!("Rook Blocker: ");
-        println!("");
-        print_binary_board(blocker[1000]);
-        println!("");
-
-        let index = (blocker[1000].wrapping_mul(rook_magics[20])) >> (64 - RBITS[20]);
-        println!("Rook Attacks: ");
-        println!("");
-        print_binary_board(rook_attacks[20][index as usize]);
-        println!("");
-
-        let blocker = blockers(WHITE_BISHOP, 21);
-
-        println!("");
-        println!("Bishop Blocker: ");
-        println!("");
-        print_binary_board(blocker[100]);
-        println!("");
-
-        let index = (blocker[100].wrapping_mul(bishop_magics[21])) >> (64 - BBITS[21]);
-        println!("Bishop Attacks: ");
-        println!("");
-        print_binary_board(bishop_attacks[21][index as usize]);
-        println!("");
     }
 
     #[test]
