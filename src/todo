@@ -1,4 +1,9 @@
 12/28/24:
+  1. in_check
+  2. movegen for non-pawn pieces
+  3. make_move
+
+12/28/24:
   Finish pawn_moves (all the kinds of promotions). Finish movegen functions for each other piece.
   Gonna also need a function that takes in a board and a move and returns the
   updated board after the move is made. Write in_check. 

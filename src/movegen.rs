@@ -1,5 +1,5 @@
-use crate::bitboard::init_bitboards;
 use crate::utils::*;
+use crate::bitboard::MAGIC_TABLES;
 
 // The Move representation
 #[derive(Debug)]
@@ -344,6 +344,45 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
     moves
 }
 
+// Checks if the king of the current player is in check
+fn in_check(board: &Board) -> bool {
+    // check knight squares
+    // check diagonals until obstructed for queens/bishops
+    //      check appropriate squares for pawn attacks
+    // check straights until obstructed for queens/rooks
+    // check also for king proximity
+    let (king, other_pawn, other_knight, other_bishop, other_rook, other_queen) = if board.turn {
+        (
+            board.white_king,
+            board.black_pawn,
+            board.black_knight,
+            board.black_bishop,
+            board.black_rook,
+            board.black_queen,
+        )
+    } else {
+        (
+            board.black_king,
+            board.white_pawn,
+            board.white_knight,
+            board.white_bishop,
+            board.white_rook,
+            board.white_queen,
+        )
+    };
+
+    let king_pos = set_bit_positions(king)[0];
+    if KNIGHT_MOVE_MASKS[king_pos as usize] & other_knight != 0 {
+        return true;
+    };
+
+
+
+
+
+    false
+}
+
 /*
 fn king_moves(board: &Board, position: u8) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
@@ -388,10 +427,6 @@ fn moves_helper(piece: u8, position: u8, potentials: u64, board: &Board) -> Vec<
 
     moves
 }
-
-// Checks if a given color's king is in check
-fn in_check(board: &Board, color: bool) -> bool {}
-
 // This function checks if a potential move is legal. If it is, it creates a Move instance and returns it.
 // If the path is obstructed by either color piece,
 // it sets the obstructed boolean flag to true. If the move is illegal, it returns None.
@@ -836,10 +871,10 @@ mod tests {
     #[test]
     fn black_pawn_moves() {
         let mut board = create_test_board();
-         board.black_pawn |= (1 << 48) | (1 << 33) | (1 << 26) | (1 << 13);
+        board.black_pawn |= (1 << 48) | (1 << 33) | (1 << 26) | (1 << 13);
         board.black |= board.black_pawn;
 
-        board.white_pawn |= (1 << 41) | (1 << 24) | (1 << 18) | (1 << 4); 
+        board.white_pawn |= (1 << 41) | (1 << 24) | (1 << 18) | (1 << 4);
         board.white |= board.white_pawn;
         board.turn = false;
         board.ep_target = Some(19);
