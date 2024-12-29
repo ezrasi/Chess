@@ -1,4 +1,5 @@
 use crate::utils::*;
+use lazy_static::lazy_static;
 
 // Number of on bits in the blocker mask per square (excludes current square and edges)
 const RBITS: [u8; 64] = [
@@ -12,10 +13,20 @@ const BBITS: [u8; 64] = [
     5, 5, 7, 9, 9, 7, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 6,
 ];
 
+pub struct MagicTables {
+    pub rook_attacks: Vec<Vec<u64>>,
+    pub rook_magics: Vec<u64>,
+    pub bishop_attacks: Vec<Vec<u64>>,
+    pub bishop_magics: Vec<u64>,
+}
+
 // Returns rook and bishop attack tables and magics. rook_magics[i] is used to map rook blockers
 // when rook is at position i to the appropriate attack mask in the rook_attacks[i] set of attack
 // boards
-pub fn init_bitboards() -> ((Vec<Vec<u64>>, Vec<u64>), (Vec<Vec<u64>>, Vec<u64>)) {
+lazy_static! {
+    pub static ref MAGIC_TABLES: MagicTables = generate_magic_tables();
+}
+pub fn generate_magic_tables() -> MagicTables {
     let mut rook_attacks = Vec::new();
     let mut rook_magics = Vec::new();
     let mut bishop_attacks = Vec::new();
@@ -33,7 +44,12 @@ pub fn init_bitboards() -> ((Vec<Vec<u64>>, Vec<u64>), (Vec<Vec<u64>>, Vec<u64>)
         bishop_magics.push(magic);
     }
 
-    ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics))
+     MagicTables {
+        rook_attacks,
+        rook_magics,
+        bishop_attacks,
+        bishop_magics,
+    }   
 }
 
 // Returns an attack table and associated magic number for one piece and position
