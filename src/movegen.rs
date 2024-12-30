@@ -11,7 +11,7 @@ struct Move {
     kind: u8,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Board {
     pub mailbox: [u8; 64],
     pub white: u64,
@@ -39,29 +39,65 @@ pub struct Board {
     pub fullmove: u16,
 }
 
-/*
-fn make_move(before_board: &Board) -> Board {
-    if board.turn {
+// Takes in a board  and a move and returns an updated board with the move made
+fn make_move(before_board: &Board, ply: &Move) -> Board {
+    let mut after_move: Board = before_board.clone();
+    if before_board.turn {
+        match ply.kind {
+            QUIET_MOVE => {
+                let from_mask = !(1 << ply.from);
+                let to_mask = 1 << ply.to;
+                after_move.white &= from_mask;
+                after_move.white |= to_mask;
+                match ply.piece {
+                    WHITE_PAWN => {
+                        after_move.white_pawn &= from_mask;
+                        after_move.white_pawn |= to_mask;
+                    }
+                    WHITE_KNIGHT => {
+                        after_move.white_knight &= from_mask;
+                        after_move.white_knight |= to_mask;
+                    }
+                    WHITE_BISHOP => {
+                        after_move.white_bishop &= from_mask;
+                        after_move.white_bishop |= to_mask;
+                    }
+                    WHITE_ROOK => {
+                        after_move.white_rook &= from_mask;
+                        after_move.white_rook |= to_mask;
+                    }
+                    WHITE_QUEEN => {
+                        after_move.white_queen &= from_mask;
+                        after_move.white_queen |= to_mask;
+                    }
+                    WHITE_KING => {
+                        after_move.white_king &= from_mask;
+                        after_move.white_king |= to_mask;
+                    }
+                    _ => panic!("make_move white move has invalid piece code"),
+                }
+            }
 
-
-
-
-
+            DOUBLE_PAWN_PUSH => {}
+            KINGSIDE_CASTLE => {}
+            QUEENSIDE_CASTLE => {}
+            CAPTURE => {}
+            EN_PASSANT => {}
+            KNIGHT_PROMO => {}
+            BISHOP_PROMO => {}
+            ROOK_PROMO => {}
+            QUEEN_PROMO => {}
+            KNIGHT_PROMO_CAPTURE => {}
+            BISHOP_PROMO_CAPTURE => {}
+            ROOK_PROMO_CAPTURE => {}
+            QUEEN_PROMO_CAPTURE => {}
+            _ => panic!("Move received in make_move has invalid Move.kind value"),
+        }
     } else {
-
-
-
-
-
     }
 
-
-
-
-
+    after_move
 }
-
-*/
 
 /*
 // Takes in a board state and returns a Vec of all legal moves
@@ -473,7 +509,8 @@ fn in_check(board: &Board) -> bool {
     let index = straight_blockers.wrapping_mul(MAGIC_TABLES.rook_magics[king_pos_usize])
         >> (64 - RBITS[king_pos_usize]);
 
-    let straight_encounters = MAGIC_TABLES.rook_attacks[king_pos_usize][index as usize] & other_color;
+    let straight_encounters =
+        MAGIC_TABLES.rook_attacks[king_pos_usize][index as usize] & other_color;
 
     if (straight_encounters & other_rook) | (straight_encounters & other_queen) != 0 {
         return true;
@@ -975,7 +1012,7 @@ mod tests {
     #[test]
     fn in_check_02() {
         let mut board = create_test_board();
-        
+
         board.white_king = 1 << 14;
         board.white |= board.white_king;
         board.white_pawn = 1 << 28;
@@ -991,7 +1028,6 @@ mod tests {
         board.black |= board.black_rook;
         board.black_king = 1 << 7;
         board.black |= board.black_king;
-
 
         print_binary_board(board.white | board.black);
         println!("In check: {}", in_check(&board));
