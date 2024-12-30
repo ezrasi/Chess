@@ -1,5 +1,5 @@
-use crate::utils::*;
 use crate::bitboard::MAGIC_TABLES;
+use crate::utils::*;
 
 // The Move representation
 #[derive(Debug)]
@@ -351,7 +351,16 @@ fn in_check(board: &Board) -> bool {
     //      check appropriate squares for pawn attacks
     // check straights until obstructed for queens/rooks
     // check also for king proximity
-    let (king, other_color, other_pawn, other_knight, other_bishop, other_rook, other_queen, other_king) = if board.turn {
+    let (
+        king,
+        other_color,
+        other_pawn,
+        other_knight,
+        other_bishop,
+        other_rook,
+        other_queen,
+        other_king,
+    ) = if board.turn {
         (
             board.white_king,
             board.black,
@@ -375,66 +384,80 @@ fn in_check(board: &Board) -> bool {
         )
     };
 
-    let king_pos = set_bit_positions(king)[0] as usize;
+    let king_pos_usize = set_bit_positions(king)[0] as usize;
 
-    if KNIGHT_MOVE_MASKS[king_pos] & other_knight != 0 {
+    if KNIGHT_MOVE_MASKS[king_pos_usize] & other_knight != 0 {
         return true;
     };
 
     // diagonals
-    let mut diagonal_blockers = (board.white | board.black) & BISHOP_MOVE_MASKS[king_pos];
-    if king_pos < 56 {
+    let mut diagonal_blockers = (board.white | board.black) & BISHOP_MOVE_MASKS[king_pos_usize];
+    if king_pos_usize < 56 {
         diagonal_blockers &= !EIGHTH_RANK;
     }
-    if king_pos > 7 {
+    if king_pos_usize > 7 {
         diagonal_blockers &= !FIRST_RANK;
     }
-    if king_pos % 8 < 7 {
+    if king_pos_usize % 8 < 7 {
         diagonal_blockers &= !H_FILE;
     }
-    if king_pos % 8 > 0 {
+    if king_pos_usize % 8 > 0 {
         diagonal_blockers &= !A_FILE;
     }
 
-    let index = diagonal_blockers.wrapping_mul(MAGIC_TABLES.bishop_magics[king_pos]) >> (64 - BBITS[king_pos]);
+    let index = diagonal_blockers.wrapping_mul(MAGIC_TABLES.bishop_magics[king_pos_usize])
+        >> (64 - BBITS[king_pos_usize]);
 
-    let diagonal_encounters = MAGIC_TABLES.bishop_attacks[king_pos][index as usize] & other_color;
+    let diagonal_encounters =
+        MAGIC_TABLES.bishop_attacks[king_pos_usize][index as usize] & other_color;
 
     if (diagonal_encounters & other_bishop) | (diagonal_encounters & other_queen) != 0 {
-        //account for pawn too
         return true;
+    }
+    // pawns
+    let relevant_pawns = diagonal_encounters & other_pawn;
+    if (relevant_pawns) != 0 {
+        let pawn_pos = set_bit_positions(relevant_pawns);
+        for pos in pawn_pos {
+            if board.turn {
+                if (pos == (king_pos_usize as u8) + 7) | (pos == (king_pos_usize as u8) + 9) {
+                    return true;
+                }
+            } else {
+                if (pos == (king_pos_usize as u8) - 9) | (pos == (king_pos_usize as u8) - 7) {
+                    return true;
+                }
+            }
+        }
     }
 
     // straights
-    let mut straight_blockers = (board.white | board.black) & ROOK_MOVE_MASKS[king_pos];
- if king_pos < 56 {
+    let mut straight_blockers = (board.white | board.black) & ROOK_MOVE_MASKS[king_pos_usize];
+    if king_pos_usize < 56 {
         straight_blockers &= !EIGHTH_RANK;
     }
-    if king_pos > 7 {
+    if king_pos_usize > 7 {
         straight_blockers &= !FIRST_RANK;
     }
-    if king_pos % 8 < 7 {
+    if king_pos_usize % 8 < 7 {
         straight_blockers &= !H_FILE;
     }
-    if king_pos % 8 > 0 {
+    if king_pos_usize % 8 > 0 {
         straight_blockers &= !A_FILE;
     }
-let index = straight_blockers.wrapping_mul(MAGIC_TABLES.rook_magics[king_pos]) >> (64 - RBITS[king_pos]);
+    let index = straight_blockers.wrapping_mul(MAGIC_TABLES.rook_magics[king_pos_usize])
+        >> (64 - RBITS[king_pos_usize]);
 
-    let straight_encounters = MAGIC_TABLES.rook_attacks[king_pos][index as usize] & other_color;
+    let straight_encounters = MAGIC_TABLES.rook_attacks[king_pos_usize][index as usize] & other_color;
 
     if (straight_encounters & other_rook) | (straight_encounters & other_queen) != 0 {
         return true;
     }
 
     // king proximity
-    if KING_MOVE_MASKS[king_pos] & other_king != 0 {
+    if KING_MOVE_MASKS[king_pos_usize] & other_king != 0 {
         return true;
     }
-   
-
-
-
 
     false
 }
@@ -925,6 +948,30 @@ mod tests {
     use crate::utils::*;
 
     #[test]
+    fn in_check_02() {
+        let mut board = create_test_board();
+        
+        board.white_king = 1 << 14;
+        board.white |= board.white_king;
+        board.white_pawn = 1 << 28;
+        board.white |= board.white_pawn;
+
+        board.black_bishop = 1 << 35;
+        board.black |= board.black_bishop;
+        board.black_queen = 1 << 42;
+        board.black |= board.black_queen;
+        board.black_pawn |= 1 << 22;
+        board.black |= board.black_pawn;
+        board.black_rook |= 1 << 30;
+        board.black |= board.black_rook;
+        board.black_king = 1 << 7;
+        board.black |= board.black_king;
+
+
+        print_binary_board(board.white | board.black);
+        println!("In check: {}", in_check(&board));
+    }
+    #[test]
     fn in_check_01() {
         let mut board = create_test_board();
         board.white_king |= 1 << 35;
@@ -936,11 +983,8 @@ mod tests {
         board.black |= board.black_rook;
         board.black |= board.black_queen;
 
-        
-
         print_binary_board(board.white | board.black);
         println!("In check: {}", in_check(&board));
-
     }
     #[test]
     fn black_pawn_moves() {
