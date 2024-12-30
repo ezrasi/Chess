@@ -38,6 +38,31 @@ pub struct Board {
     pub halfmove: u16,
     pub fullmove: u16,
 }
+
+/*
+fn make_move(before_board: &Board) -> Board {
+    if board.turn {
+
+
+
+
+
+    } else {
+
+
+
+
+
+    }
+
+
+
+
+
+}
+
+*/
+
 /*
 // Takes in a board state and returns a Vec of all legal moves
 fn legal_moves(board: &Board) -> Vec<Move> {

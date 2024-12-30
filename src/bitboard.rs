@@ -32,12 +32,12 @@ pub fn generate_magic_tables() -> MagicTables {
         bishop_magics.push(magic);
     }
 
-     MagicTables {
+    MagicTables {
         rook_attacks,
         rook_magics,
         bishop_attacks,
         bishop_magics,
-    }   
+    }
 }
 
 // Returns an attack table and associated magic number for one piece and position
