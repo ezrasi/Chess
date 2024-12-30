@@ -7,7 +7,6 @@ struct Move {
     piece: u8,
     from: u8,
     to: u8,
-    color: bool,
     kind: u8,
 }
 
@@ -40,63 +39,220 @@ pub struct Board {
 }
 
 // Takes in a board  and a move and returns an updated board with the move made
-fn make_move(before_board: &Board, ply: &Move) -> Board {
-    let mut after_move: Board = before_board.clone();
-    if before_board.turn {
+fn make_move(before: &Board, ply: &Move) -> Board {
+    let mut after: Board = before.clone();
+    let from_mask = !(1 << ply.from);
+    let to_mask = 1 << ply.to;
+    if before.turn {
+        after.white &= from_mask;
+        after.white |= to_mask;
         match ply.kind {
-            QUIET_MOVE => {
-                let from_mask = !(1 << ply.from);
-                let to_mask = 1 << ply.to;
-                after_move.white &= from_mask;
-                after_move.white |= to_mask;
+            QUIET_MOVE => match ply.piece {
+                WHITE_PAWN => {
+                    after.white_pawn &= from_mask;
+                    after.white_pawn |= to_mask;
+                }
+                WHITE_KNIGHT => {
+                    after.white_knight &= from_mask;
+                    after.white_knight |= to_mask;
+                }
+                WHITE_BISHOP => {
+                    after.white_bishop &= from_mask;
+                    after.white_bishop |= to_mask;
+                }
+                WHITE_ROOK => {
+                    after.white_rook &= from_mask;
+                    after.white_rook |= to_mask;
+                    if ply.from == 0 {
+                        after.white_queenside_castle = false;
+                    } else if ply.from == 7 {
+                        after.white_kingside_castle = false;
+                    }
+                }
+                WHITE_QUEEN => {
+                    after.white_queen &= from_mask;
+                    after.white_queen |= to_mask;
+                }
+                WHITE_KING => {
+                    after.white_king &= from_mask;
+                    after.white_king |= to_mask;
+                    after.white_kingside_castle = false;
+                    after.white_queenside_castle = false;
+                }
+                _ => panic!("make_move white move has invalid piece code"),
+            },
+
+            DOUBLE_PAWN_PUSH => {
+                after.white_pawn &= from_mask;
+                after.white_pawn |= to_mask;
+
+                after.ep_target = Some(ply.to - 8);
+            }
+            KINGSIDE_CASTLE => {
+                after.white_king &= from_mask;
+                after.white_king |= to_mask;
+                after.white_rook &= !(1 << 7);
+                after.white_rook |= 1 << 5;
+                after.white &= !(1 << 7);
+                after.white |= 1 << 5;
+                after.white_kingside_castle = false;
+            }
+            QUEENSIDE_CASTLE => {
+                after.white_king &= from_mask;
+                after.white_king |= to_mask;
+                after.white_rook &= !1;
+                after.white_rook |= 1 << 3;
+                after.white &= !1;
+                after.white |= 1 << 3;
+                after.white_queenside_castle = false;
+            }
+            CAPTURE => {
                 match ply.piece {
                     WHITE_PAWN => {
-                        after_move.white_pawn &= from_mask;
-                        after_move.white_pawn |= to_mask;
+                        after.white_pawn &= from_mask;
+                        after.white_pawn |= to_mask;
                     }
                     WHITE_KNIGHT => {
-                        after_move.white_knight &= from_mask;
-                        after_move.white_knight |= to_mask;
+                        after.white_knight &= from_mask;
+                        after.white_knight |= to_mask;
                     }
                     WHITE_BISHOP => {
-                        after_move.white_bishop &= from_mask;
-                        after_move.white_bishop |= to_mask;
+                        after.white_bishop &= from_mask;
+                        after.white_bishop |= to_mask;
                     }
                     WHITE_ROOK => {
-                        after_move.white_rook &= from_mask;
-                        after_move.white_rook |= to_mask;
+                        after.white_rook &= from_mask;
+                        after.white_rook |= to_mask;
+                        if ply.from == 0 {
+                            after.white_queenside_castle = false;
+                        } else if ply.from == 7 {
+                            after.white_kingside_castle = false;
+                        }
                     }
                     WHITE_QUEEN => {
-                        after_move.white_queen &= from_mask;
-                        after_move.white_queen |= to_mask;
+                        after.white_queen &= from_mask;
+                        after.white_queen |= to_mask;
                     }
                     WHITE_KING => {
-                        after_move.white_king &= from_mask;
-                        after_move.white_king |= to_mask;
+                        after.white_king &= from_mask;
+                        after.white_king |= to_mask;
+                        after.white_kingside_castle = false;
+                        after.white_queenside_castle = false;
                     }
                     _ => panic!("make_move white move has invalid piece code"),
-                }
+                };
+                if to_mask & after.black_pawn != 0 {
+                    after.black_pawn &= !to_mask;
+                } else if to_mask & after.black_knight != 0 {
+                    after.black_knight &= !to_mask;
+                } else if to_mask & after.black_bishop != 0 {
+                    after.black_bishop &= !to_mask;
+                } else if to_mask & after.black_rook != 0 {
+                    after.black_rook &= !to_mask;
+                } else if to_mask & after.black_queen != 0 {
+                    after.black_queen &= !to_mask;
+                };
+                after.black &= !to_mask;
             }
-
-            DOUBLE_PAWN_PUSH => {}
-            KINGSIDE_CASTLE => {}
-            QUEENSIDE_CASTLE => {}
-            CAPTURE => {}
-            EN_PASSANT => {}
-            KNIGHT_PROMO => {}
-            BISHOP_PROMO => {}
-            ROOK_PROMO => {}
-            QUEEN_PROMO => {}
-            KNIGHT_PROMO_CAPTURE => {}
-            BISHOP_PROMO_CAPTURE => {}
-            ROOK_PROMO_CAPTURE => {}
-            QUEEN_PROMO_CAPTURE => {}
+            EN_PASSANT => {
+                after.white_pawn &= from_mask;
+                after.white_pawn |= to_mask;
+                after.black_pawn &= !(1 << (ply.to - 8));
+                after.black &= !(1 << (ply.to - 8));
+            }
+            KNIGHT_PROMO => {
+                after.white_pawn &= from_mask;
+                after.white_knight |= to_mask;
+            }
+            BISHOP_PROMO => {
+                after.white_pawn &= from_mask;
+                after.white_bishop |= to_mask;
+            }
+            ROOK_PROMO => {
+                after.white_pawn &= from_mask;
+                after.white_rook |= to_mask;
+            }
+            QUEEN_PROMO => {
+                after.white_pawn &= from_mask;
+                after.white_queen |= to_mask;
+            }
+            KNIGHT_PROMO_CAPTURE => {
+                after.white_pawn &= from_mask;
+                after.white_knight |= to_mask;
+                if to_mask & after.black_pawn != 0 {
+                    after.black_pawn &= !to_mask;
+                } else if to_mask & after.black_knight != 0 {
+                    after.black_knight &= !to_mask;
+                } else if to_mask & after.black_bishop != 0 {
+                    after.black_bishop &= !to_mask;
+                } else if to_mask & after.black_rook != 0 {
+                    after.black_rook &= !to_mask;
+                } else if to_mask & after.black_queen != 0 {
+                    after.black_queen &= !to_mask;
+                };
+                after.black &= !to_mask;
+            }
+            BISHOP_PROMO_CAPTURE => {
+                after.white_pawn &= from_mask;
+                after.white_bishop |= to_mask;
+                if to_mask & after.black_pawn != 0 {
+                    after.black_pawn &= !to_mask;
+                } else if to_mask & after.black_knight != 0 {
+                    after.black_knight &= !to_mask;
+                } else if to_mask & after.black_bishop != 0 {
+                    after.black_bishop &= !to_mask;
+                } else if to_mask & after.black_rook != 0 {
+                    after.black_rook &= !to_mask;
+                } else if to_mask & after.black_queen != 0 {
+                    after.black_queen &= !to_mask;
+                };
+                after.black &= !to_mask;
+            }
+            ROOK_PROMO_CAPTURE => {
+                after.white_pawn &= from_mask;
+                after.white_rook |= to_mask;
+                if to_mask & after.black_pawn != 0 {
+                    after.black_pawn &= !to_mask;
+                } else if to_mask & after.black_knight != 0 {
+                    after.black_knight &= !to_mask;
+                } else if to_mask & after.black_bishop != 0 {
+                    after.black_bishop &= !to_mask;
+                } else if to_mask & after.black_rook != 0 {
+                    after.black_rook &= !to_mask;
+                } else if to_mask & after.black_queen != 0 {
+                    after.black_queen &= !to_mask;
+                };
+                after.black &= !to_mask;
+            }
+            QUEEN_PROMO_CAPTURE => {
+                after.white_pawn &= from_mask;
+                after.white_queen |= to_mask;
+                if to_mask & after.black_pawn != 0 {
+                    after.black_pawn &= !to_mask;
+                } else if to_mask & after.black_knight != 0 {
+                    after.black_knight &= !to_mask;
+                } else if to_mask & after.black_bishop != 0 {
+                    after.black_bishop &= !to_mask;
+                } else if to_mask & after.black_rook != 0 {
+                    after.black_rook &= !to_mask;
+                } else if to_mask & after.black_queen != 0 {
+                    after.black_queen &= !to_mask;
+                };
+                after.black &= !to_mask;
+            }
             _ => panic!("Move received in make_move has invalid Move.kind value"),
         }
     } else {
+        after.fullmove += 1;
     }
 
-    after_move
+    if ply.kind != DOUBLE_PAWN_PUSH {
+        after.ep_target = None;
+    }
+
+    after.halfmove += 1;
+    after.turn = !before.turn;
+    after
 }
 
 /*
@@ -275,7 +431,6 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
                 piece,
                 from,
                 to,
-                color: board.turn,
                 kind,
             });
         }
@@ -285,7 +440,6 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
             piece,
             from,
             to,
-            color: board.turn,
             kind,
         });
     };
@@ -1009,6 +1163,31 @@ mod tests {
     use super::*;
     use crate::utils::*;
 
+    #[test]
+    fn make_white_move_01(){
+        let mut board = create_test_board();
+        board.white_pawn = 1 << 10;
+        board.white |= board.white_pawn;
+        let ply = Move {
+            piece: WHITE_PAWN,
+            from: 10,
+            to: 26,
+            kind: DOUBLE_PAWN_PUSH,
+        };
+        let after = make_move(&board, &ply);
+
+        println!("");
+        println!("Before Double Pawn Push: ");
+        print_binary_board(board.white_pawn);
+        println!("");
+        println!("{:?}", board);
+        println!("");
+        println!("After Double Pawn Push: ");
+        print_binary_board(after.white_pawn);
+        println!("");
+        println!("{:?}", after);
+        println!("");
+    }
     #[test]
     fn in_check_02() {
         let mut board = create_test_board();
