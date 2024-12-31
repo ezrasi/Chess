@@ -96,6 +96,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 after.white &= !(1 << 7);
                 after.white |= 1 << 5;
                 after.white_kingside_castle = false;
+                after.white_queenside_castle = false;
             }
             QUEENSIDE_CASTLE => {
                 after.white_king &= from_mask;
@@ -105,6 +106,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 after.white &= !1;
                 after.white |= 1 << 3;
                 after.white_queenside_castle = false;
+                after.white_kingside_castle = false;
             }
             CAPTURE => {
                 match ply.piece {
@@ -1164,10 +1166,41 @@ mod tests {
     use crate::utils::*;
 
     #[test]
-    fn make_white_move_01(){
+    fn make_white_move_01() {
         let mut board = create_test_board();
+
+        //quiet rook move
+        board.white_rook |= 1 << 20;
+        board.white |= board.white_rook;
+        let ply = Move {
+            piece: WHITE_ROOK,
+            from: 20,
+            to: 60,
+            kind: QUIET_MOVE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.ep_target, None);
+        assert_eq!(after.white_rook, 1 << 60);
+        assert_eq!(after.white, 1 << 60);
+
+        // quiet rook move preventing castling
+        board.white_rook = 1 << 7;
+        board.white = board.white_rook;
+        let ply = Move {
+            piece: WHITE_ROOK,
+            from: 7,
+            to: 47,
+            kind: QUIET_MOVE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.white_kingside_castle, false);
+        assert_eq!(after.white_queenside_castle, true);
+        assert_eq!(after.white_rook, 1 << 47);
+        assert_eq!(after.white, 1 << 47);
+
+        // double pawn push
         board.white_pawn = 1 << 10;
-        board.white |= board.white_pawn;
+        board.white = board.white_pawn;
         let ply = Move {
             piece: WHITE_PAWN,
             from: 10,
@@ -1175,18 +1208,131 @@ mod tests {
             kind: DOUBLE_PAWN_PUSH,
         };
         let after = make_move(&board, &ply);
+        assert_eq!(after.ep_target, Some(18));
+        assert_eq!(after.white_pawn, 1 << 26);
+        assert_eq!(after.white, 1 << 26);
 
-        println!("");
-        println!("Before Double Pawn Push: ");
-        print_binary_board(board.white_pawn);
-        println!("");
-        println!("{:?}", board);
-        println!("");
-        println!("After Double Pawn Push: ");
-        print_binary_board(after.white_pawn);
-        println!("");
-        println!("{:?}", after);
-        println!("");
+        // kingside castle
+        board.white_king = 1 << 4;
+        board.white_rook = 1 << 7;
+        board.white = board.white_king | board.white_rook;
+        let ply = Move {
+            piece: WHITE_KING,
+            from: 4,
+            to: 6,
+            kind: KINGSIDE_CASTLE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.white_kingside_castle, false);
+        assert_eq!(after.white_queenside_castle, false);
+        assert_eq!(after.white_king, 1 << 6);
+        assert_eq!(after.white_rook, 1 << 5);
+        assert_eq!(after.white, 1 << 5 | 1 << 6);
+
+        // queenside castle
+        board.white_king = 1 << 4;
+        board.white_rook = 1 << 0;
+        board.white = board.white_king | board.white_rook;
+        let ply = Move {
+            piece: WHITE_KING,
+            from: 4,
+            to: 2,
+            kind: QUEENSIDE_CASTLE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.white_kingside_castle, false);
+        assert_eq!(after.white_queenside_castle, false);
+        assert_eq!(after.white_king, 1 << 2);
+        assert_eq!(after.white_rook, 1 << 3);
+        assert_eq!(after.white, 1 << 2 | 1 << 3);
+
+        // capture
+        board.white_bishop = 1 << 28;
+        board.white = board.white_bishop;
+        board.black_rook = 1 << 42;
+        board.black = board.black_rook;
+        let ply = Move {
+            piece: WHITE_BISHOP,
+            from: 28,
+            to: 42,
+            kind: CAPTURE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.white_bishop, 1 << 42);
+        assert_eq!(after.white, 1 << 42);
+        assert_eq!(after.black, 0);
+        assert_eq!(after.black_rook, 0);
+
+        // rook capture ruining castling
+         board.white_rook = 1 << 7;
+        board.white = board.white_rook;
+        board.black_rook = 1 << 47;
+        board.black = board.black_rook;
+        let ply = Move {
+            piece: WHITE_ROOK, 
+            from: 7,
+            to: 47,
+            kind: CAPTURE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.white_rook, 1 << 47);
+        assert_eq!(after.white, 1 << 47);
+        assert_eq!(after.black, 0);
+        assert_eq!(after.black_rook, 0);
+        assert_eq!(after.white_kingside_castle, false);
+        assert_eq!(after.white_queenside_castle, true);
+
+        // en passant
+        board.white_pawn = 1 << 36;
+        board.white = board.white_pawn;
+        board.black_pawn = 1 << 35;
+        board.black = board.black_pawn;
+        board.ep_target = Some(43);
+        let ply = Move {
+            piece: WHITE_PAWN,
+            from: 36,
+            to: 43,
+            kind: EN_PASSANT, 
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.ep_target, None);
+        assert_eq!(after.white_pawn, 1 << 43);
+        assert_eq!(after.white, 1 << 43);
+        assert_eq!(after.black_pawn, 0);
+        assert_eq!(after.black, 0);
+
+        // promotion
+        board.white_pawn = 1 << 52;
+        board.white = board.white_pawn;
+        let ply = Move {
+            piece: WHITE_PAWN,
+            from: 52, 
+            to: 60,
+            kind: QUEEN_PROMO,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.white_pawn, 0);
+        assert_eq!(after.white_queen, 1 << 60);
+        assert_eq!(after.white, 1 << 60);
+
+        // promo capture
+        board.white_pawn = 1 << 52;
+        board.white = board.white_pawn;
+        board.black_queen = 1 << 59;
+        board.black = board.black_queen;
+        let ply = Move {
+            piece: WHITE_PAWN,
+            from: 52, 
+            to: 59,
+            kind: KNIGHT_PROMO_CAPTURE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.white_pawn, 0);
+        assert_eq!(after.white_knight, 1 << 59);
+        assert_eq!(after.white, 1 << 59);
+        assert_eq!(after.black_queen, 0);
+        assert_eq!(after.black, 0);
+
     }
     #[test]
     fn in_check_02() {
