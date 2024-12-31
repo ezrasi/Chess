@@ -687,21 +687,29 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
         };
 
         for kind in kinds {
-            moves.push(Move {
+            let ply = Move {
                 piece,
                 from,
                 to,
                 kind,
-            });
+            };
+            let new_board = make_move(&board, &ply);
+            if !in_check(&new_board, board.turn) {
+                moves.push(ply);
+            }
         }
     };
     let add_regular_move = |moves: &mut Vec<Move>, from: u8, to: u8, kind: u8| {
-        moves.push(Move {
-            piece,
-            from,
-            to,
-            kind,
-        });
+        let ply = Move {
+                piece,
+                from,
+                to,
+                kind,
+            };
+            let new_board = make_move(&board, &ply);
+            if !in_check(&new_board, board.turn) {
+                moves.push(ply);
+            }
     };
 
     // forward single move
@@ -820,7 +828,7 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
 }
 
 // Checks if the king of the current player is in check
-fn in_check(board: &Board) -> bool {
+fn in_check(board: &Board, color: bool) -> bool {
     // check knight squares
     // check diagonals until obstructed for queens/bishops
     //      check appropriate squares for pawn attacks
@@ -835,7 +843,7 @@ fn in_check(board: &Board) -> bool {
         other_rook,
         other_queen,
         other_king,
-    ) = if board.turn {
+    ) = if color {
         (
             board.white_king,
             board.black,
@@ -894,7 +902,7 @@ fn in_check(board: &Board) -> bool {
     if (relevant_pawns) != 0 {
         let pawn_pos = set_bit_positions(relevant_pawns);
         for pos in pawn_pos {
-            if board.turn {
+            if color {
                 if (pos == (king_pos_usize as u8) + 7) | (pos == (king_pos_usize as u8) + 9) {
                     return true;
                 }
@@ -1424,7 +1432,24 @@ mod tests {
     use crate::utils::*;
 
     #[test]
-    fn make_black_move_01() {
+    fn legal_pawn_moves(){
+        let mut board = create_test_board();
+        board.white_pawn = (1 << 9) | (1 << 52) | (1 << 12);
+        board.white_king = 1 << 5;
+        board.white |= board.white_pawn | board.white_king;
+        board.black_queen = 1 << 19;
+        board.black |= board.black_queen;
+
+
+        let pawnmoves = pawn_moves(&board);
+        println!("Pawn moves: {:?}", pawnmoves);
+        assert_eq!(pawnmoves.len(), 7); 
+
+
+    }
+
+    #[test]
+    fn make_black_move() {
         let mut board = create_test_board();
         board.turn = false;
         board.halfmove = 1;
@@ -1597,7 +1622,7 @@ mod tests {
     }
 
     #[test]
-    fn make_white_move_01() {
+    fn make_white_move() {
         let mut board = create_test_board();
 
         //quiet rook move
@@ -1785,7 +1810,7 @@ mod tests {
         board.black |= board.black_king;
 
         print_binary_board(board.white | board.black);
-        println!("In check: {}", in_check(&board));
+        println!("In check: {}", in_check(&board, board.turn));
     }
     #[test]
     fn in_check_01() {
@@ -1800,7 +1825,7 @@ mod tests {
         board.black |= board.black_queen;
 
         print_binary_board(board.white | board.black);
-        println!("In check: {}", in_check(&board));
+        println!("In check: {}", in_check(&board, board.turn));
     }
     #[test]
     fn black_pawn_moves() {
