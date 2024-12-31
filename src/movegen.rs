@@ -937,9 +937,8 @@ fn bishop_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> 
     moves
 }
 
-
 fn rook_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> Vec<Move> {
- debug_assert!(
+    debug_assert!(
         position <= 63,
         "rook_moves received invalid position: {}",
         position
@@ -1015,13 +1014,153 @@ fn queen_moves(board: &Board, position: u8) -> Vec<Move> {
     moves
 }
 
-/*
 fn king_moves(board: &Board, position: u8) -> Vec<Move> {
-    let mut moves: Vec<Move> = Vec::new();
+    //set piece and colors
+    let (piece, color, other_color) = if board.turn {
+        (WHITE_KING, board.white, board.black)
+    } else {
+        (BLACK_KING, board.black, board.white)
+    };
 
+    // moves besides castling
+    let potentials = KING_MOVE_MASKS[position as usize] & !color;
+    let quiets = potentials & !other_color;
+    let captures = potentials & other_color;
+    let quiet_pos = set_bit_positions(quiets);
+    let capture_pos = set_bit_positions(captures);
+
+    let mut moves: Vec<Move> = Vec::new();
+    for dest in quiet_pos {
+        let ply = Move {
+            piece,
+            from: position,
+            to: dest,
+            kind: QUIET_MOVE,
+        };
+        let new_board = make_move(&board, &ply);
+        if !in_check(&new_board, board.turn) {
+            moves.push(ply);
+        }
+    }
+    for dest in capture_pos {
+        let ply = Move {
+            piece,
+            from: position,
+            to: dest,
+            kind: CAPTURE,
+        };
+        let new_board = make_move(&board, &ply);
+        if !in_check(&new_board, board.turn) {
+            moves.push(ply);
+        }
+    }
+
+    // castling
+    if board.turn {
+        if position == 4 {
+            // kingside castle
+            if ((color | other_color) & (1 << 5 | 1 << 6)) == 0 && board.white_kingside_castle {
+                // make sure king doesnt pass through check
+                let check_test = Move {
+                    piece,
+                    from: position,
+                    to: 5,
+                    kind: QUIET_MOVE,
+                };
+                let check_test_board = make_move(&board, &check_test);
+                if !in_check(&check_test_board, board.turn) {
+                    let ply = Move {
+                        piece,
+                        from: position,
+                        to: 6,
+                        kind: KINGSIDE_CASTLE,
+                    };
+                    let new_board = make_move(&board, &ply);
+                    if !in_check(&new_board, board.turn) {
+                        moves.push(ply);
+                    }
+                }
+            }
+            // queenside castle
+            if ((color | other_color) & (1 << 1 | 1 << 2 | 1 << 3)) == 0
+                && board.white_queenside_castle
+            {
+                // make sure king doesnt pass through check
+                let check_test = Move {
+                    piece,
+                    from: position,
+                    to: 3,
+                    kind: QUIET_MOVE,
+                };
+                let check_test_board = make_move(&board, &check_test);
+                if !in_check(&check_test_board, board.turn) {
+                    let ply = Move {
+                        piece,
+                        from: position,
+                        to: 2,
+                        kind: QUEENSIDE_CASTLE,
+                    };
+                    let new_board = make_move(&board, &ply);
+                    if !in_check(&new_board, board.turn) {
+                        moves.push(ply);
+                    }
+                }
+            }
+        }
+    } else {
+        if position == 60 {
+            // kingside castle
+            if ((color | other_color) & (1 << 61 | 1 << 62)) == 0 && board.black_kingside_castle {
+                // make sure king doesnt pass through check
+                let check_test = Move {
+                    piece,
+                    from: position,
+                    to: 61,
+                    kind: QUIET_MOVE,
+                };
+                let check_test_board = make_move(&board, &check_test);
+                if !in_check(&check_test_board, board.turn) {
+                    let ply = Move {
+                        piece,
+                        from: position,
+                        to: 62,
+                        kind: KINGSIDE_CASTLE,
+                    };
+                    let new_board = make_move(&board, &ply);
+                    if !in_check(&new_board, board.turn) {
+                        moves.push(ply);
+                    }
+                }
+            }
+            // queenside castle
+            if ((color | other_color) & (1 << 57 | 1 << 58 | 1 << 59)) == 0
+                && board.black_queenside_castle
+            {
+                // make sure king doesnt pass through check
+                let check_test = Move {
+                    piece,
+                    from: position,
+                    to: 59,
+                    kind: QUIET_MOVE,
+                };
+                let check_test_board = make_move(&board, &check_test);
+                if !in_check(&check_test_board, board.turn) {
+                    let ply = Move {
+                        piece,
+                        from: position,
+                        to: 58,
+                        kind: QUEENSIDE_CASTLE,
+                    };
+                    let new_board = make_move(&board, &ply);
+                    if !in_check(&new_board, board.turn) {
+                        moves.push(ply);
+                    }
+                }
+            }
+        }
+    }
     moves
 }
-*/
 // Checks if the king of the current player is in check
 fn in_check(board: &Board, color: bool) -> bool {
     // check knight squares
@@ -1547,6 +1686,22 @@ mod tests {
     use std::time::Instant;
 
     #[test]
+    fn legal_king_moves() {
+        let mut board = create_test_board();
+        board.white_king = 1 << 4;
+        board.white_rook = 1 << 0 | 1 << 7;
+        //board.white_knight = 1 << 2;
+        board.white |= board.white_king | board.white_rook | board.white_knight;
+        board.black_queen = 1 << 61 | 1 << 39;
+        board.black |= board.black_queen;
+        let kingmoves = king_moves(&board, 4);
+        println!("");
+        println!("Queen moves: {:?}", kingmoves);
+        println!("");
+        assert_eq!(kingmoves.len(), 1);
+
+    }
+    #[test]
     fn legal_queen_moves() {
         let mut board = create_test_board();
         board.white_queen = 1 << 28;
@@ -1555,7 +1710,6 @@ mod tests {
 
         board.black_pawn = 1 << 42;
         board.black |= board.black_pawn;
-
 
         let queenmoves = queen_moves(&board, 28);
         let mut bits: u64 = 0;
