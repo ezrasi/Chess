@@ -5,7 +5,7 @@
 //true = white and false = black. This enables the ! operator for opposite color.
 
 // The Board representation.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Board {
     pub mailbox: [u8; 64],
     pub white: u64,

@@ -25,6 +25,34 @@ pub fn print_binary_board(value: u64) {
         });
 }
 
+// The Board representation.
+#[derive(Clone, Debug)]
+pub struct Board {
+    pub white: u64,
+    pub black: u64,
+    pub white_pawn: u64,
+    pub white_knight: u64,
+    pub white_bishop: u64,
+    pub white_rook: u64,
+    pub white_queen: u64,
+    pub white_king: u64,
+    pub black_pawn: u64,
+    pub black_knight: u64,
+    pub black_bishop: u64,
+    pub black_rook: u64,
+    pub black_queen: u64,
+    pub black_king: u64,
+    pub turn: bool,
+    pub white_kingside_castle: bool,
+    pub white_queenside_castle: bool,
+    pub black_kingside_castle: bool,
+    pub black_queenside_castle: bool,
+    //en-passant
+    pub ep_target: Option<u8>,
+    pub halfmove: u16,
+    pub fullmove: u16,
+}
+
 // a-file             0x0101010101010101
 // h-file             0x8080808080808080
 // 1st rank           0x00000000000000FF
