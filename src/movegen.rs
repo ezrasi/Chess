@@ -937,22 +937,65 @@ fn bishop_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> 
     moves
 }
 
-/*
 
 fn rook_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> Vec<Move> {
-    debug_assert!(
+ debug_assert!(
         position <= 63,
         "rook_moves received invalid position: {}",
         position
     );
+    let (piece, color, other_color) = if board.turn {
+        (WHITE_ROOK, board.white, board.black)
+    } else {
+        (BLACK_ROOK, board.black, board.white)
+    };
     let mut moves: Vec<Move> = Vec::new();
 
-    //set piece and colors
-    let piece = if color { WHITE_ROOK } else { BLACK_ROOK };
-    let board_color = if color { &board.white } else { &board.black };
-    let other_color = if color { &board.black } else { &board.white };
-
     // TODO use bitboard and mask with board state
+    let mut mask = ROOK_MOVE_MASKS[position as usize];
+    if position < 56 {
+        mask &= !EIGHTH_RANK;
+    }
+    if position > 7 {
+        mask &= !FIRST_RANK;
+    }
+    if position % 8 < 7 {
+        mask &= !H_FILE;
+    }
+    if position % 8 > 0 {
+        mask &= !A_FILE;
+    }
+    mask &= color | other_color;
+    let index = mask.wrapping_mul(magic) >> (64 - RBITS[position as usize] as u64);
+    let potentials = attacks[index as usize] & !color;
+
+    let quiets = set_bit_positions(potentials & !other_color);
+    let captures = set_bit_positions(potentials & other_color);
+
+    for dest in quiets {
+        let ply = Move {
+            piece,
+            from: position,
+            to: dest,
+            kind: QUIET_MOVE,
+        };
+        let new_board = make_move(&board, &ply);
+        if !in_check(&new_board, board.turn) {
+            moves.push(ply);
+        }
+    }
+    for dest in captures {
+        let ply = Move {
+            piece,
+            from: position,
+            to: dest,
+            kind: CAPTURE,
+        };
+        let new_board = make_move(&board, &ply);
+        if !in_check(&new_board, board.turn) {
+            moves.push(ply);
+        }
+    }
 
     moves
 }
@@ -963,11 +1006,16 @@ fn queen_moves(board: &Board, position: u8) -> Vec<Move> {
         "queen_moves received invalid position: {}",
         position
     );
-    let mut moves = bishop_moves(board, position, color);
-    moves.extend(rook_moves(board, position, color));
+    let bishop_attacks = &MAGIC_TABLES.bishop_attacks[position as usize];
+    let bishop_magic = MAGIC_TABLES.bishop_magics[position as usize];
+    let rook_attacks = &MAGIC_TABLES.rook_attacks[position as usize];
+    let rook_magic = MAGIC_TABLES.rook_magics[position as usize];
+    let mut moves = bishop_moves(board, position, bishop_attacks, bishop_magic);
+    moves.extend(rook_moves(board, position, rook_attacks, rook_magic));
     moves
 }
 
+/*
 fn king_moves(board: &Board, position: u8) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
 
@@ -1498,6 +1546,30 @@ mod tests {
     use crate::utils::*;
     use std::time::Instant;
 
+    #[test]
+    fn legal_queen_moves() {
+        let mut board = create_test_board();
+        board.white_queen = 1 << 28;
+        board.white_king = 1 << 12;
+        board.white |= board.white_queen | board.white_king;
+
+        board.black_pawn = 1 << 42;
+        board.black |= board.black_pawn;
+
+
+        let queenmoves = queen_moves(&board, 28);
+        let mut bits: u64 = 0;
+        for ply in queenmoves.iter() {
+            bits |= 1 << ply.to;
+        }
+        println!("");
+        println!("");
+        print_binary_board(bits);
+        println!("");
+        println!("Queen moves: {:?}", queenmoves);
+        println!("");
+        assert_eq!(queenmoves.len(), 23);
+    }
     #[test]
     fn legal_bishop_moves() {
         let mut board = create_test_board();
