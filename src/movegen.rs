@@ -938,14 +938,7 @@ fn rook_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> Ve
     mask &= color | other_color;
     let index = mask.wrapping_mul(magic) >> (64 - RBITS[position as usize] as u64);
     let potentials = attacks[index as usize] & !color;
-            println!("");
-    println!("Color: ");
-    print_binary_board(color);
-            println!("");
-    println!("Rook potentials: ");
-    print_binary_board(potentials);
-    println!("");
-
+   
     let quiets = set_bit_positions(potentials & !other_color);
     let captures = set_bit_positions(potentials & other_color);
 
@@ -1682,11 +1675,32 @@ fn starting_position() -> Board {
     }
 }
 
+fn perft(board: &Board, depth: u8) -> u64 {
+    if depth == 0 {
+        return 1
+    };
+    let mut count = 0;
+
+    let moves = legal_moves(board);
+    for ply in moves.iter() {
+        let new_board = make_move(board, &ply);    
+        count += perft(&new_board, depth - 1);
+    }
+    count
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::utils::*;
     use std::time::Instant;
+
+    #[test]
+    fn test_perft() {
+     let board = starting_position();
+    let perft = perft(&board, 5);
+        println!("Perft at depth 5: {}", perft);
+    }
 
     #[test]
     fn test_legal_moves() {
