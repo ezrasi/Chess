@@ -701,15 +701,15 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
     };
     let add_regular_move = |moves: &mut Vec<Move>, from: u8, to: u8, kind: u8| {
         let ply = Move {
-                piece,
-                from,
-                to,
-                kind,
-            };
-            let new_board = make_move(&board, &ply);
-            if !in_check(&new_board, board.turn) {
-                moves.push(ply);
-            }
+            piece,
+            from,
+            to,
+            kind,
+        };
+        let new_board = make_move(&board, &ply);
+        if !in_check(&new_board, board.turn) {
+            moves.push(ply);
+        }
     };
 
     // forward single move
@@ -827,6 +827,107 @@ fn pawn_moves(board: &Board) -> Vec<Move> {
     moves
 }
 
+fn knight_moves(board: &Board, position: u8) -> Vec<Move> {
+    debug_assert!(
+        position <= 63,
+        "knight_moves received invalid position: {}",
+        position
+    );
+    //set piece and colors
+    let (piece, color, other_color) = if board.turn {
+        (WHITE_KNIGHT, board.white, board.black)
+    } else {
+        (BLACK_KNIGHT, board.black, board.white)
+    };
+
+    // All the destinations it could jump (ignoring leaving the king in check)
+    let potentials = KNIGHT_MOVE_MASKS[position as usize] & !color;
+    let quiets = potentials & !other_color;
+    let captures = potentials & other_color;
+    let quiet_pos = set_bit_positions(quiets);
+    let capture_pos = set_bit_positions(captures);
+
+    let mut moves: Vec<Move> = Vec::new();
+    for dest in quiet_pos {
+        let ply = Move {
+            piece,
+            from: position,
+            to: dest,
+            kind: QUIET_MOVE,
+        };
+        let new_board = make_move(&board, &ply);
+        if !in_check(&new_board, board.turn) {
+            moves.push(ply);
+        }
+    }
+    for dest in capture_pos {
+        let ply = Move {
+            piece,
+            from: position,
+            to: dest,
+            kind: CAPTURE,
+        };
+        let new_board = make_move(&board, &ply);
+        if !in_check(&new_board, board.turn) {
+            moves.push(ply);
+        }
+    }
+
+    moves
+}
+/*
+fn bishop_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> Vec<Move> {
+    debug_assert!(
+        position <= 63,
+        "bishop_moves received invalid position: {}",
+        position
+    );
+    let mut moves: Vec<Move> = Vec::new();
+    //set piece and colors
+    let piece = if color { WHITE_BISHOP } else { BLACK_BISHOP };
+    let board_color = if color { &board.white } else { &board.black };
+    let other_color = if color { &board.black } else { &board.white };
+
+    // TODO use bitboard and mask with board state
+
+    moves
+}
+
+fn rook_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> Vec<Move> {
+    debug_assert!(
+        position <= 63,
+        "rook_moves received invalid position: {}",
+        position
+    );
+    let mut moves: Vec<Move> = Vec::new();
+
+    //set piece and colors
+    let piece = if color { WHITE_ROOK } else { BLACK_ROOK };
+    let board_color = if color { &board.white } else { &board.black };
+    let other_color = if color { &board.black } else { &board.white };
+
+    // TODO use bitboard and mask with board state
+
+    moves
+}
+
+fn queen_moves(board: &Board, position: u8) -> Vec<Move> {
+    debug_assert!(
+        position <= 63,
+        "queen_moves received invalid position: {}",
+        position
+    );
+    let mut moves = bishop_moves(board, position, color);
+    moves.extend(rook_moves(board, position, color));
+    moves
+}
+
+fn king_moves(board: &Board, position: u8) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+
+    moves
+}
+*/
 // Checks if the king of the current player is in check
 fn in_check(board: &Board, color: bool) -> bool {
     // check knight squares
@@ -947,41 +1048,6 @@ fn in_check(board: &Board, color: bool) -> bool {
 }
 
 /*
-fn king_moves(board: &Board, position: u8) -> Vec<Move> {
-    let mut moves: Vec<Move> = Vec::new();
-
-    moves
-}
-
-fn knight_moves(board: &Board, position: u8) -> Vec<Move> {
-    debug_assert!(
-        position <= 63,
-        "knight_moves received invalid position: {}",
-        position
-    );
-    //set piece and colors
-    let piece = if board.turn {
-        WHITE_KNIGHT
-    } else {
-        BLACK_KNIGHT
-    };
-    let board_color = if board.turn {
-        &board.white
-    } else {
-        &board.black
-    };
-    let other_color = if board.turn {
-        &board.black
-    } else {
-        &board.white
-    };
-
-    // All the destinations it could jump (ignoring leaving the king in check)
-    let potentials = KNIGHT_MOVE_MASKS[position as usize] & !board_color;
-
-    moves_helper(piece, position, potentials, board)
-}
-
 fn moves_helper(piece: u8, position: u8, potentials: u64, board: &Board) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
     let potential_list = set_bit_positions(potentials);
@@ -1131,52 +1197,6 @@ fn knight_movers(board: &Board, position: u8) -> Vec<Move> {
             }
         }
     }
-    moves
-}
-
-fn bishop_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> Vec<Move> {
-    debug_assert!(
-        position <= 63,
-        "bishop_moves received invalid position: {}",
-        position
-    );
-    let mut moves: Vec<Move> = Vec::new();
-    //set piece and colors
-    let piece = if color { WHITE_BISHOP } else { BLACK_BISHOP };
-    let board_color = if color { &board.white } else { &board.black };
-    let other_color = if color { &board.black } else { &board.white };
-
-    // TODO use bitboard and mask with board state
-
-    moves
-}
-
-fn rook_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> Vec<Move> {
-    debug_assert!(
-        position <= 63,
-        "rook_moves received invalid position: {}",
-        position
-    );
-    let mut moves: Vec<Move> = Vec::new();
-
-    //set piece and colors
-    let piece = if color { WHITE_ROOK } else { BLACK_ROOK };
-    let board_color = if color { &board.white } else { &board.black };
-    let other_color = if color { &board.black } else { &board.white };
-
-    // TODO use bitboard and mask with board state
-
-    moves
-}
-
-fn queen_moves(board: &Board, position: u8) -> Vec<Move> {
-    debug_assert!(
-        position <= 63,
-        "queen_moves received invalid position: {}",
-        position
-    );
-    let mut moves = bishop_moves(board, position, color);
-    moves.extend(rook_moves(board, position, color));
     moves
 }
 
@@ -1430,9 +1450,39 @@ fn create_test_board() -> Board {
 mod tests {
     use super::*;
     use crate::utils::*;
+    use std::time::Instant;
+
 
     #[test]
-    fn legal_pawn_moves(){
+    fn legal_knight_moves() {
+        let mut board = create_test_board();
+        board.white_knight = 1 << 27;
+        board.white_king = 1 << 13;
+        board.white |= board.white_knight | board.white_king;
+        board.black_bishop = 1 << 48;
+        board.black |= board.black_bishop;
+        let knightmoves = knight_moves(&board, 27);
+     println!("");
+        println!("Knight moves: {:?}", knightmoves);
+        println!("");
+        assert_eq!(knightmoves.len(), 0);
+
+
+        let now = Instant::now();
+
+        let knightmoves = knight_moves(&board, 27);
+        println!("Knight moves: {:?}", knightmoves);
+        println!("");
+        println!("");
+         println!("Elapsed time: {:?}", now.elapsed());
+        println!("");
+        println!("");
+
+
+    }
+
+    #[test]
+    fn legal_pawn_moves() {
         let mut board = create_test_board();
         // 12 pawn can't move foward bc pinned
         board.white_pawn = (1 << 9) | (1 << 52) | (1 << 12);
@@ -1441,16 +1491,15 @@ mod tests {
         board.black_queen = 1 << 19;
         board.black |= board.black_queen;
 
-
         let pawnmoves = pawn_moves(&board);
         println!("");
         println!("Pawn moves: {:?}", pawnmoves);
         println!("");
-        assert_eq!(pawnmoves.len(), 7); 
+        assert_eq!(pawnmoves.len(), 7);
 
         // no en passant bc would be in check
         board.white_pawn = 1 << 36;
-         board.white_king = 1 << 39;
+        board.white_king = 1 << 39;
         board.white = board.white_pawn | board.white_king;
         board.black_pawn = 1 << 35;
         board.black_rook = 1 << 32;
@@ -1461,8 +1510,7 @@ mod tests {
         println!("");
         println!("Pawn moves: {:?}", pawnmoves);
         println!("");
-        assert_eq!(pawnmoves.len(), 1); 
-
+        assert_eq!(pawnmoves.len(), 1);
     }
 
     #[test]
