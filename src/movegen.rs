@@ -1434,6 +1434,7 @@ mod tests {
     #[test]
     fn legal_pawn_moves(){
         let mut board = create_test_board();
+        // 12 pawn can't move foward bc pinned
         board.white_pawn = (1 << 9) | (1 << 52) | (1 << 12);
         board.white_king = 1 << 5;
         board.white |= board.white_pawn | board.white_king;
@@ -1442,9 +1443,25 @@ mod tests {
 
 
         let pawnmoves = pawn_moves(&board);
+        println!("");
         println!("Pawn moves: {:?}", pawnmoves);
+        println!("");
         assert_eq!(pawnmoves.len(), 7); 
 
+        // no en passant bc would be in check
+        board.white_pawn = 1 << 36;
+         board.white_king = 1 << 39;
+        board.white = board.white_pawn | board.white_king;
+        board.black_pawn = 1 << 35;
+        board.black_rook = 1 << 32;
+        board.black = board.black_pawn | board.black_rook;
+        board.ep_target = Some(43);
+
+        let pawnmoves = pawn_moves(&board);
+        println!("");
+        println!("Pawn moves: {:?}", pawnmoves);
+        println!("");
+        assert_eq!(pawnmoves.len(), 1); 
 
     }
 
