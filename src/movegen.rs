@@ -43,6 +43,8 @@ fn make_move(before: &Board, ply: &Move) -> Board {
     let mut after: Board = before.clone();
     let from_mask = !(1 << ply.from);
     let to_mask = 1 << ply.to;
+
+    // a white move
     if before.turn {
         after.white &= from_mask;
         after.white |= to_mask;
@@ -101,9 +103,9 @@ fn make_move(before: &Board, ply: &Move) -> Board {
             QUEENSIDE_CASTLE => {
                 after.white_king &= from_mask;
                 after.white_king |= to_mask;
-                after.white_rook &= !1;
+                after.white_rook &= !(1 << 0);
                 after.white_rook |= 1 << 3;
-                after.white &= !1;
+                after.white &= !(1 << 0);
                 after.white |= 1 << 3;
                 after.white_queenside_castle = false;
                 after.white_kingside_castle = false;
@@ -150,6 +152,11 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 } else if to_mask & after.black_bishop != 0 {
                     after.black_bishop &= !to_mask;
                 } else if to_mask & after.black_rook != 0 {
+                    if ply.to == 56 {
+                        after.black_queenside_castle = false;
+                    } else if ply.to == 63 {
+                        after.black_kingside_castle = false;
+                    }
                     after.black_rook &= !to_mask;
                 } else if to_mask & after.black_queen != 0 {
                     after.black_queen &= !to_mask;
@@ -188,6 +195,12 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 } else if to_mask & after.black_bishop != 0 {
                     after.black_bishop &= !to_mask;
                 } else if to_mask & after.black_rook != 0 {
+                    if ply.to == 56 {
+                        after.black_queenside_castle = false;
+                    } else if ply.to == 63 {
+                        after.black_kingside_castle = false;
+                    }
+
                     after.black_rook &= !to_mask;
                 } else if to_mask & after.black_queen != 0 {
                     after.black_queen &= !to_mask;
@@ -204,6 +217,12 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 } else if to_mask & after.black_bishop != 0 {
                     after.black_bishop &= !to_mask;
                 } else if to_mask & after.black_rook != 0 {
+                    if ply.to == 56 {
+                        after.black_queenside_castle = false;
+                    } else if ply.to == 63 {
+                        after.black_kingside_castle = false;
+                    }
+
                     after.black_rook &= !to_mask;
                 } else if to_mask & after.black_queen != 0 {
                     after.black_queen &= !to_mask;
@@ -220,6 +239,11 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 } else if to_mask & after.black_bishop != 0 {
                     after.black_bishop &= !to_mask;
                 } else if to_mask & after.black_rook != 0 {
+                    if ply.to == 56 {
+                        after.black_queenside_castle = false;
+                    } else if ply.to == 63 {
+                        after.black_kingside_castle = false;
+                    }
                     after.black_rook &= !to_mask;
                 } else if to_mask & after.black_queen != 0 {
                     after.black_queen &= !to_mask;
@@ -236,6 +260,11 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 } else if to_mask & after.black_bishop != 0 {
                     after.black_bishop &= !to_mask;
                 } else if to_mask & after.black_rook != 0 {
+                    if ply.to == 56 {
+                        after.black_queenside_castle = false;
+                    } else if ply.to == 63 {
+                        after.black_kingside_castle = false;
+                    }
                     after.black_rook &= !to_mask;
                 } else if to_mask & after.black_queen != 0 {
                     after.black_queen &= !to_mask;
@@ -244,7 +273,236 @@ fn make_move(before: &Board, ply: &Move) -> Board {
             }
             _ => panic!("Move received in make_move has invalid Move.kind value"),
         }
-    } else {
+    }
+    // a black move
+    else {
+        after.black &= from_mask;
+        after.black |= to_mask;
+        match ply.kind {
+            QUIET_MOVE => match ply.piece {
+                BLACK_PAWN => {
+                    after.black_pawn &= from_mask;
+                    after.black_pawn |= to_mask;
+                }
+                BLACK_KNIGHT => {
+                    after.black_knight &= from_mask;
+                    after.black_knight |= to_mask;
+                }
+                BLACK_BISHOP => {
+                    after.black_bishop &= from_mask;
+                    after.black_bishop |= to_mask;
+                }
+                BLACK_ROOK => {
+                    after.black_rook &= from_mask;
+                    after.black_rook |= to_mask;
+                    if ply.from == 56 {
+                        after.black_queenside_castle = false;
+                    } else if ply.from == 63 {
+                        after.black_kingside_castle = false;
+                    }
+                }
+                BLACK_QUEEN => {
+                    after.black_queen &= from_mask;
+                    after.black_queen |= to_mask;
+                }
+                BLACK_KING => {
+                    after.black_king &= from_mask;
+                    after.black_king |= to_mask;
+                    after.black_kingside_castle = false;
+                    after.black_queenside_castle = false;
+                }
+                _ => panic!("make_move black move has invalid piece code"),
+            },
+
+            DOUBLE_PAWN_PUSH => {
+                after.black_pawn &= from_mask;
+                after.black_pawn |= to_mask;
+
+                after.ep_target = Some(ply.to + 8);
+            }
+            KINGSIDE_CASTLE => {
+                after.black_king &= from_mask;
+                after.black_king |= to_mask;
+                after.black_rook &= !(1 << 63);
+                after.black_rook |= 1 << 61;
+                after.black &= !(1 << 63);
+                after.black |= 1 << 61;
+                after.black_kingside_castle = false;
+                after.black_queenside_castle = false;
+            }
+            QUEENSIDE_CASTLE => {
+                after.black_king &= from_mask;
+                after.black_king |= to_mask;
+                after.black_rook &= !(1 << 56);
+                after.black_rook |= 1 << 59;
+                after.black &= !(1 << 56);
+                after.black |= 1 << 59;
+                after.black_queenside_castle = false;
+                after.black_kingside_castle = false;
+            }
+            CAPTURE => {
+                match ply.piece {
+                    BLACK_PAWN => {
+                        after.black_pawn &= from_mask;
+                        after.black_pawn |= to_mask;
+                    }
+                    BLACK_KNIGHT => {
+                        after.black_knight &= from_mask;
+                        after.black_knight |= to_mask;
+                    }
+                    BLACK_BISHOP => {
+                        after.black_bishop &= from_mask;
+                        after.black_bishop |= to_mask;
+                    }
+                    BLACK_ROOK => {
+                        after.black_rook &= from_mask;
+                        after.black_rook |= to_mask;
+                        if ply.from == 56 {
+                            after.black_queenside_castle = false;
+                        } else if ply.from == 63 {
+                            after.black_kingside_castle = false;
+                        }
+                    }
+                    BLACK_QUEEN => {
+                        after.black_queen &= from_mask;
+                        after.black_queen |= to_mask;
+                    }
+                    BLACK_KING => {
+                        after.black_king &= from_mask;
+                        after.black_king |= to_mask;
+                        after.black_kingside_castle = false;
+                        after.black_queenside_castle = false;
+                    }
+                    _ => panic!("make_move black move has invalid piece code"),
+                };
+                if to_mask & after.white_pawn != 0 {
+                    after.white_pawn &= !to_mask;
+                } else if to_mask & after.white_knight != 0 {
+                    after.white_knight &= !to_mask;
+                } else if to_mask & after.white_bishop != 0 {
+                    after.white_bishop &= !to_mask;
+                } else if to_mask & after.white_rook != 0 {
+                    if ply.to == 0 {
+                        after.white_queenside_castle = false;
+                    } else if ply.to == 7 {
+                        after.white_kingside_castle = false;
+                    }
+                    after.white_rook &= !to_mask;
+                } else if to_mask & after.white_queen != 0 {
+                    after.white_queen &= !to_mask;
+                };
+                after.white &= !to_mask;
+            }
+            EN_PASSANT => {
+                after.black_pawn &= from_mask;
+                after.black_pawn |= to_mask;
+                after.white_pawn &= !(1 << (ply.to + 8));
+                after.white &= !(1 << (ply.to + 8));
+            }
+            KNIGHT_PROMO => {
+                after.black_pawn &= from_mask;
+                after.black_knight |= to_mask;
+            }
+            BISHOP_PROMO => {
+                after.black_pawn &= from_mask;
+                after.black_bishop |= to_mask;
+            }
+            ROOK_PROMO => {
+                after.black_pawn &= from_mask;
+                after.black_rook |= to_mask;
+            }
+            QUEEN_PROMO => {
+                after.black_pawn &= from_mask;
+                after.black_queen |= to_mask;
+            }
+            KNIGHT_PROMO_CAPTURE => {
+                after.black_pawn &= from_mask;
+                after.black_knight |= to_mask;
+                if to_mask & after.white_pawn != 0 {
+                    after.white_pawn &= !to_mask;
+                } else if to_mask & after.white_knight != 0 {
+                    after.white_knight &= !to_mask;
+                } else if to_mask & after.white_bishop != 0 {
+                    after.white_bishop &= !to_mask;
+                } else if to_mask & after.white_rook != 0 {
+                    if ply.to == 0 {
+                        after.white_queenside_castle = false;
+                    } else if ply.to == 7 {
+                        after.white_kingside_castle = false;
+                    }
+
+                    after.white_rook &= !to_mask;
+                } else if to_mask & after.white_queen != 0 {
+                    after.white_queen &= !to_mask;
+                };
+                after.white &= !to_mask;
+            }
+            BISHOP_PROMO_CAPTURE => {
+                after.black_pawn &= from_mask;
+                after.black_bishop |= to_mask;
+                if to_mask & after.white_pawn != 0 {
+                    after.white_pawn &= !to_mask;
+                } else if to_mask & after.white_knight != 0 {
+                    after.white_knight &= !to_mask;
+                } else if to_mask & after.white_bishop != 0 {
+                    after.white_bishop &= !to_mask;
+                } else if to_mask & after.white_rook != 0 {
+                    if ply.to == 0 {
+                        after.white_queenside_castle = false;
+                    } else if ply.to == 7 {
+                        after.white_kingside_castle = false;
+                    }
+                    after.white_rook &= !to_mask;
+                } else if to_mask & after.white_queen != 0 {
+                    after.white_queen &= !to_mask;
+                };
+                after.white &= !to_mask;
+            }
+            ROOK_PROMO_CAPTURE => {
+                after.black_pawn &= from_mask;
+                after.black_rook |= to_mask;
+                if to_mask & after.white_pawn != 0 {
+                    after.white_pawn &= !to_mask;
+                } else if to_mask & after.white_knight != 0 {
+                    after.white_knight &= !to_mask;
+                } else if to_mask & after.white_bishop != 0 {
+                    after.white_bishop &= !to_mask;
+                } else if to_mask & after.white_rook != 0 {
+                    if ply.to == 0 {
+                        after.white_queenside_castle = false;
+                    } else if ply.to == 7 {
+                        after.white_kingside_castle = false;
+                    }
+                    after.white_rook &= !to_mask;
+                } else if to_mask & after.white_queen != 0 {
+                    after.white_queen &= !to_mask;
+                };
+                after.white &= !to_mask;
+            }
+            QUEEN_PROMO_CAPTURE => {
+                after.black_pawn &= from_mask;
+                after.black_queen |= to_mask;
+                if to_mask & after.white_pawn != 0 {
+                    after.white_pawn &= !to_mask;
+                } else if to_mask & after.white_knight != 0 {
+                    after.white_knight &= !to_mask;
+                } else if to_mask & after.white_bishop != 0 {
+                    after.white_bishop &= !to_mask;
+                } else if to_mask & after.white_rook != 0 {
+                    if ply.to == 0 {
+                        after.white_queenside_castle = false;
+                    } else if ply.to == 7 {
+                        after.white_kingside_castle = false;
+                    }
+                    after.white_rook &= !to_mask;
+                } else if to_mask & after.white_queen != 0 {
+                    after.white_queen &= !to_mask;
+                };
+                after.white &= !to_mask;
+            }
+            _ => panic!("Move received in make_move has invalid Move.kind value"),
+        }
+
         after.fullmove += 1;
     }
 
@@ -1166,6 +1424,179 @@ mod tests {
     use crate::utils::*;
 
     #[test]
+    fn make_black_move_01() {
+        let mut board = create_test_board();
+        board.turn = false;
+        board.halfmove = 1;
+
+        //quiet rook move
+        board.black_rook |= 1 << 20;
+        board.black |= board.black_rook;
+        let ply = Move {
+            piece: BLACK_ROOK,
+            from: 20,
+            to: 60,
+            kind: QUIET_MOVE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.ep_target, None);
+        assert_eq!(after.black_rook, 1 << 60);
+        assert_eq!(after.black, 1 << 60);
+
+        // quiet rook move preventing castling
+        board.black_rook = 1 << 63;
+        board.black = board.black_rook;
+        let ply = Move {
+            piece: BLACK_ROOK,
+            from: 63,
+            to: 47,
+            kind: QUIET_MOVE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.black_kingside_castle, false);
+        assert_eq!(after.black_queenside_castle, true);
+        assert_eq!(after.black_rook, 1 << 47);
+        assert_eq!(after.black, 1 << 47);
+
+        // double pawn push
+        board.black_pawn = 1 << 52;
+        board.black = board.black_pawn;
+        let ply = Move {
+            piece: BLACK_PAWN,
+            from: 52,
+            to: 36,
+            kind: DOUBLE_PAWN_PUSH,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.ep_target, Some(44));
+        assert_eq!(after.black_pawn, 1 << 36);
+        assert_eq!(after.black, 1 << 36);
+
+        // kingside castle
+        board.black_king = 1 << 60;
+        board.black_rook = 1 << 63;
+        board.black = board.black_king | board.black_rook;
+        let ply = Move {
+            piece: BLACK_KING,
+            from: 60,
+            to: 62,
+            kind: KINGSIDE_CASTLE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.black_kingside_castle, false);
+        assert_eq!(after.black_queenside_castle, false);
+        assert_eq!(after.black_king, 1 << 62);
+        assert_eq!(after.black_rook, 1 << 61);
+        assert_eq!(after.black, 1 << 61 | 1 << 62);
+
+        // queenside castle
+        board.black_king = 1 << 60;
+        board.black_rook = 1 << 56;
+        board.black = board.black_king | board.black_rook;
+        let ply = Move {
+            piece: BLACK_KING,
+            from: 60,
+            to: 58,
+            kind: QUEENSIDE_CASTLE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.black_kingside_castle, false);
+        assert_eq!(after.black_queenside_castle, false);
+        assert_eq!(after.black_king, 1 << 58);
+        assert_eq!(after.black_rook, 1 << 59);
+        assert_eq!(after.black, 1 << 58 | 1 << 59);
+
+        // capture
+        board.black_bishop = 1 << 45;
+        board.black = board.black_bishop;
+        board.white_rook = 1 << 0;
+        board.white = board.white_rook;
+        let ply = Move {
+            piece: BLACK_BISHOP,
+            from: 45,
+            to: 0,
+            kind: CAPTURE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.black_bishop, 1 << 0);
+        assert_eq!(after.black, 1 << 0);
+        assert_eq!(after.white, 0);
+        assert_eq!(after.white_rook, 0);
+        assert_eq!(after.white_queenside_castle, false);
+        assert_eq!(after.white_kingside_castle, true);
+
+        // rook capture ruining castling
+        board.black_rook = 1 << 63;
+        board.black = board.black_rook;
+        board.white_rook = 1 << 47;
+        board.white = board.white_rook;
+        let ply = Move {
+            piece: BLACK_ROOK,
+            from: 63,
+            to: 47,
+            kind: CAPTURE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.black_rook, 1 << 47);
+        assert_eq!(after.black, 1 << 47);
+        assert_eq!(after.white, 0);
+        assert_eq!(after.white_rook, 0);
+        assert_eq!(after.black_kingside_castle, false);
+        assert_eq!(after.black_queenside_castle, true);
+
+        // en passant
+        board.black_pawn = 1 << 24;
+        board.black = board.black_pawn;
+        board.white_pawn = 1 << 25;
+        board.white = board.white_pawn;
+        board.ep_target = Some(17);
+        let ply = Move {
+            piece: BLACK_PAWN,
+            from: 24,
+            to: 17,
+            kind: EN_PASSANT,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.ep_target, None);
+        assert_eq!(after.black_pawn, 1 << 17);
+        assert_eq!(after.black, 1 << 17);
+        assert_eq!(after.white_pawn, 0);
+        assert_eq!(after.white, 0);
+
+        // promotion
+        board.black_pawn = 1 << 13;
+        board.black = board.black_pawn;
+        let ply = Move {
+            piece: BLACK_PAWN,
+            from: 13,
+            to: 5,
+            kind: BISHOP_PROMO,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.black_pawn, 0);
+        assert_eq!(after.black_bishop, 1 << 5);
+        assert_eq!(after.black, 1 << 5);
+
+        // promo capture
+        board.black_pawn = 1 << 9;
+        board.black = board.black_pawn;
+        board.white_queen = 1 << 2;
+        board.white = board.white_queen;
+        let ply = Move {
+            piece: BLACK_PAWN,
+            from: 9,
+            to: 2,
+            kind: QUEEN_PROMO_CAPTURE,
+        };
+        let after = make_move(&board, &ply);
+        assert_eq!(after.black_pawn, 0);
+        assert_eq!(after.black_queen, 1 << 2);
+        assert_eq!(after.black, 1 << 2);
+        assert_eq!(after.white_queen, 0);
+        assert_eq!(after.white, 0);
+    }
+
+    #[test]
     fn make_white_move_01() {
         let mut board = create_test_board();
 
@@ -1264,12 +1695,12 @@ mod tests {
         assert_eq!(after.black_rook, 0);
 
         // rook capture ruining castling
-         board.white_rook = 1 << 7;
+        board.white_rook = 1 << 7;
         board.white = board.white_rook;
         board.black_rook = 1 << 47;
         board.black = board.black_rook;
         let ply = Move {
-            piece: WHITE_ROOK, 
+            piece: WHITE_ROOK,
             from: 7,
             to: 47,
             kind: CAPTURE,
@@ -1292,7 +1723,7 @@ mod tests {
             piece: WHITE_PAWN,
             from: 36,
             to: 43,
-            kind: EN_PASSANT, 
+            kind: EN_PASSANT,
         };
         let after = make_move(&board, &ply);
         assert_eq!(after.ep_target, None);
@@ -1306,7 +1737,7 @@ mod tests {
         board.white = board.white_pawn;
         let ply = Move {
             piece: WHITE_PAWN,
-            from: 52, 
+            from: 52,
             to: 60,
             kind: QUEEN_PROMO,
         };
@@ -1322,7 +1753,7 @@ mod tests {
         board.black = board.black_queen;
         let ply = Move {
             piece: WHITE_PAWN,
-            from: 52, 
+            from: 52,
             to: 59,
             kind: KNIGHT_PROMO_CAPTURE,
         };
@@ -1332,7 +1763,6 @@ mod tests {
         assert_eq!(after.white, 1 << 59);
         assert_eq!(after.black_queen, 0);
         assert_eq!(after.black, 0);
-
     }
     #[test]
     fn in_check_02() {
