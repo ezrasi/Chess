@@ -10,34 +10,6 @@ struct Move {
     kind: u8,
 }
 
-#[derive(Clone, Debug)]
-pub struct Board {
-    pub mailbox: [u8; 64],
-    pub white: u64,
-    pub black: u64,
-    pub white_pawn: u64,
-    pub white_knight: u64,
-    pub white_bishop: u64,
-    pub white_rook: u64,
-    pub white_queen: u64,
-    pub white_king: u64,
-    pub black_pawn: u64,
-    pub black_knight: u64,
-    pub black_bishop: u64,
-    pub black_rook: u64,
-    pub black_queen: u64,
-    pub black_king: u64,
-    pub turn: bool,
-    pub white_kingside_castle: bool,
-    pub white_queenside_castle: bool,
-    pub black_kingside_castle: bool,
-    pub black_queenside_castle: bool,
-    // en-passant,
-    pub ep_target: Option<u8>,
-    pub halfmove: u16,
-    pub fullmove: u16,
-}
-
 // Takes in a board  and a move and returns an updated board with the move made
 fn make_move(before: &Board, ply: &Move) -> Board {
     let mut after: Board = before.clone();
@@ -515,30 +487,32 @@ fn make_move(before: &Board, ply: &Move) -> Board {
     after
 }
 
-/*
 // Takes in a board state and returns a Vec of all legal moves
 fn legal_moves(board: &Board) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
-    let (pawns, knights, bishops, rooks, queens, king);
-    // THE FOLLOWING LINE WILL BE INITIALIZED ELSWHERE. bitboards will be held in bitboard.rs as a
-    // global variable.
-    let ((rook_attacks, rook_magics), (bishop_attacks, bishop_magics)) = init_bitboards();
+    let rook_attacks = &MAGIC_TABLES.rook_attacks;
+    let rook_magics = &MAGIC_TABLES.rook_magics;
+    let bishop_attacks = &MAGIC_TABLES.bishop_attacks;
+    let bishop_magics = &MAGIC_TABLES.bishop_magics;
 
-    if board.turn {
-        knights = board.white_knight;
-        bishops = board.white_bishop;
-        rooks = board.white_rook;
-        queens = board.white_queen;
-        king = board.white_king;
+    let (knights, bishops, rooks, queens, king) = if board.turn {
+        (
+            board.white_knight,
+            board.white_bishop,
+            board.white_rook, 
+            board.white_queen,
+            board.white_king,
+        )
     } else {
-        knights = board.black_knight;
-        bishops = board.black_bishop;
-        rooks = board.black_rook;
-        queens = board.black_queen;
-        king = board.black_king;
-    }
-
-    // Add pawn moves
+        (
+            board.black_knight,
+            board.black_bishop,
+            board.black_rook, 
+            board.black_queen,
+            board.black_king,
+        )
+    };
+       // Add pawn moves
     moves.extend(pawn_moves(board));
 
     // Add rook moves
@@ -581,11 +555,8 @@ fn legal_moves(board: &Board) -> Vec<Move> {
         moves.extend(king_moves(board, position));
     }
 
-    // TODO call helper functions for each piece type (pass along appropriate color)
-
     moves
 }
-*/
 
 /* A GOOD REFACTORING GUIDE FOR PAWN_MOVES (from Claude)
 fn pawn_moves(board: &Board) -> Vec<Move> {
@@ -967,6 +938,13 @@ fn rook_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> Ve
     mask &= color | other_color;
     let index = mask.wrapping_mul(magic) >> (64 - RBITS[position as usize] as u64);
     let potentials = attacks[index as usize] & !color;
+            println!("");
+    println!("Color: ");
+    print_binary_board(color);
+            println!("");
+    println!("Rook potentials: ");
+    print_binary_board(potentials);
+    println!("");
 
     let quiets = set_bit_positions(potentials & !other_color);
     let captures = set_bit_positions(potentials & other_color);
@@ -1653,7 +1631,6 @@ fn pawn_moves(board: &Board, position: u8, color: bool) -> Vec<Move> {
 
 fn create_test_board() -> Board {
     Board {
-        mailbox: [0; 64],
         white: 0,
         black: 0,
         white_pawn: 0,
@@ -1678,6 +1655,32 @@ fn create_test_board() -> Board {
         fullmove: 0,
     }
 }
+fn starting_position() -> Board {
+    Board {
+        white: FIRST_RANK | SECOND_RANK,
+        black: SEVENTH_RANK | EIGHTH_RANK,
+        white_pawn: SECOND_RANK,
+        white_knight: 1 << 1 | 1 << 6,
+        white_bishop: 1 << 2 | 1 << 5,
+        white_rook: 1 << 0 | 1 << 7,
+        white_queen: 1 << 3,
+        white_king: 1 << 4,
+        black_pawn: SEVENTH_RANK,
+        black_knight: 1 << 57 | 1 << 62,
+        black_bishop: 1 << 58 | 1 << 61,
+        black_rook: 1 << 56 | 1 << 63,
+        black_queen: 1 << 59,
+        black_king: 1 << 60,
+        turn: true,
+        white_kingside_castle: true,
+        white_queenside_castle: true,
+        black_kingside_castle: true,
+        black_queenside_castle: true,
+        ep_target: None,
+        halfmove: 0,
+        fullmove: 0,
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -1685,6 +1688,22 @@ mod tests {
     use crate::utils::*;
     use std::time::Instant;
 
+    #[test]
+    fn test_legal_moves() {
+
+        let board = starting_position();
+        let moves = legal_moves(&board);
+        for ply in moves.iter() {
+            println!("");
+            println!("{:?}", ply);
+            println!("");
+
+
+        }
+        assert_eq!(moves.len(), 20);
+
+
+    }
     #[test]
     fn legal_king_moves() {
         let mut board = create_test_board();
@@ -1699,7 +1718,6 @@ mod tests {
         println!("Queen moves: {:?}", kingmoves);
         println!("");
         assert_eq!(kingmoves.len(), 1);
-
     }
     #[test]
     fn legal_queen_moves() {
