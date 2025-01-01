@@ -1,4 +1,7 @@
 12/31/24:
+  1. See why perft isn't matching for depth 5 and beyond
+
+12/31/24:
   1. legal_moves
   2. perft
 

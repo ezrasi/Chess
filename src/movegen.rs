@@ -499,7 +499,7 @@ fn legal_moves(board: &Board) -> Vec<Move> {
         (
             board.white_knight,
             board.white_bishop,
-            board.white_rook, 
+            board.white_rook,
             board.white_queen,
             board.white_king,
         )
@@ -507,12 +507,12 @@ fn legal_moves(board: &Board) -> Vec<Move> {
         (
             board.black_knight,
             board.black_bishop,
-            board.black_rook, 
+            board.black_rook,
             board.black_queen,
             board.black_king,
         )
     };
-       // Add pawn moves
+    // Add pawn moves
     moves.extend(pawn_moves(board));
 
     // Add rook moves
@@ -938,7 +938,7 @@ fn rook_moves(board: &Board, position: u8, attacks: &Vec<u64>, magic: u64) -> Ve
     mask &= color | other_color;
     let index = mask.wrapping_mul(magic) >> (64 - RBITS[position as usize] as u64);
     let potentials = attacks[index as usize] & !color;
-   
+
     let quiets = set_bit_positions(potentials & !other_color);
     let captures = set_bit_positions(potentials & other_color);
 
@@ -1671,23 +1671,66 @@ fn starting_position() -> Board {
         black_queenside_castle: true,
         ep_target: None,
         halfmove: 0,
-        fullmove: 0,
+        fullmove: 1,
     }
 }
 
 fn perft(board: &Board, depth: u8) -> u64 {
-    if depth == 0 {
-        return 1
+    if depth == 1 {
+        return legal_moves(board).len() as u64;
     };
     let mut count = 0;
 
     let moves = legal_moves(board);
     for ply in moves.iter() {
-        let new_board = make_move(board, &ply);    
+        let new_board = make_move(board, &ply);
         count += perft(&new_board, depth - 1);
     }
     count
 }
+
+fn perft_captures(board: &Board, depth: u8) -> u64 {
+    if depth == 1 {
+        let moves = legal_moves(board);
+        let mut count = 0;
+        for ply in moves.iter() {
+            if ply.kind == CAPTURE {
+                count += 1;
+            }
+        }
+        return count;
+    };
+    let mut count = 0;
+
+    let moves = legal_moves(board);
+    for ply in moves.iter() {
+        let new_board = make_move(board, &ply);
+        count += perft_captures(&new_board, depth - 1);
+    }
+    count
+}
+
+fn perft_ep(board: &Board, depth: u8) -> u64 {
+    if depth == 1 {
+        let moves = legal_moves(board);
+        let mut count = 0;
+        for ply in moves.iter() {
+            if ply.kind == EN_PASSANT {
+                count += 1;
+            }
+        }
+        return count;
+    };
+    let mut count = 0;
+
+    let moves = legal_moves(board);
+    for ply in moves.iter() {
+        let new_board = make_move(board, &ply);
+        count += perft_ep(&new_board, depth - 1);
+    }
+    count
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -1695,28 +1738,53 @@ mod tests {
     use crate::utils::*;
     use std::time::Instant;
 
+ #[test]
+    fn test_perft_ep() {
+        let hi = &MAGIC_TABLES;
+        println!("{:?}", hi.rook_magics[50]);
+        let board = starting_position();
+        let now = Instant::now();
+        let ep = perft_ep(&board, 5);
+        println!("Ep at depth 5: {}", ep);
+        println!("Elapsed time: {:?}", now.elapsed().as_secs());
+    }
+
+    #[test]
+    fn test_perft_captures() {
+        let hi = &MAGIC_TABLES;
+        println!("{:?}", hi.rook_magics[50]);
+        let board = starting_position();
+        let now = Instant::now();
+        let captures = perft_captures(&board, 5);
+        println!("Captures at depth 5: {}", captures);
+        println!("Elapsed time: {:?}", now.elapsed().as_secs());
+    }
+
     #[test]
     fn test_perft() {
-     let board = starting_position();
-    let perft = perft(&board, 5);
+        let hi = &MAGIC_TABLES;
+        println!("{:?}", hi.rook_magics[50]);
+        let board = starting_position();
+        let now = Instant::now();
+        let perft = perft(&board, 5);
         println!("Perft at depth 5: {}", perft);
+        println!("Elapsed time: {:?}", now.elapsed().as_secs());
     }
 
     #[test]
     fn test_legal_moves() {
-
+        let hi = &MAGIC_TABLES;
+        println!("{:?}", hi.rook_magics[50]);
         let board = starting_position();
+        let now = Instant::now();
         let moves = legal_moves(&board);
         for ply in moves.iter() {
             println!("");
             println!("{:?}", ply);
             println!("");
-
-
         }
         assert_eq!(moves.len(), 20);
-
-
+        println!("Elapsed time: {:?}", now.elapsed().as_secs());
     }
     #[test]
     fn legal_king_moves() {

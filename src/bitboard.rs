@@ -1,6 +1,7 @@
 use crate::utils::*;
 use lazy_static::lazy_static;
 
+#[derive(Debug)]
 pub struct MagicTables {
     pub rook_attacks: Vec<Vec<u64>>,
     pub rook_magics: Vec<u64>,
