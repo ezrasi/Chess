@@ -25,6 +25,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 WHITE_PAWN => {
                     after.white_pawn &= from_mask;
                     after.white_pawn |= to_mask;
+                after.halfmove = 0;
                 }
                 WHITE_KNIGHT => {
                     after.white_knight &= from_mask;
@@ -61,6 +62,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 after.white_pawn |= to_mask;
 
                 after.ep_target = Some(ply.to - 8);
+                after.halfmove = 0;
             }
             KINGSIDE_CASTLE => {
                 after.white_king &= from_mask;
@@ -134,12 +136,14 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                     after.black_queen &= !to_mask;
                 };
                 after.black &= !to_mask;
+                after.halfmove = 0;
             }
             EN_PASSANT => {
                 after.white_pawn &= from_mask;
                 after.white_pawn |= to_mask;
                 after.black_pawn &= !(1 << (ply.to - 8));
                 after.black &= !(1 << (ply.to - 8));
+                after.halfmove = 0;
             }
             KNIGHT_PROMO => {
                 after.white_pawn &= from_mask;
@@ -178,6 +182,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                     after.black_queen &= !to_mask;
                 };
                 after.black &= !to_mask;
+                after.halfmove = 0;
             }
             BISHOP_PROMO_CAPTURE => {
                 after.white_pawn &= from_mask;
@@ -200,6 +205,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                     after.black_queen &= !to_mask;
                 };
                 after.black &= !to_mask;
+                after.halfmove = 0;
             }
             ROOK_PROMO_CAPTURE => {
                 after.white_pawn &= from_mask;
@@ -221,6 +227,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                     after.black_queen &= !to_mask;
                 };
                 after.black &= !to_mask;
+                after.halfmove = 0;
             }
             QUEEN_PROMO_CAPTURE => {
                 after.white_pawn &= from_mask;
@@ -242,6 +249,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                     after.black_queen &= !to_mask;
                 };
                 after.black &= !to_mask;
+                after.halfmove = 0;
             }
             _ => panic!("Move received in make_move has invalid Move.kind value"),
         }
@@ -255,6 +263,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 BLACK_PAWN => {
                     after.black_pawn &= from_mask;
                     after.black_pawn |= to_mask;
+                after.halfmove = 0;
                 }
                 BLACK_KNIGHT => {
                     after.black_knight &= from_mask;
@@ -291,6 +300,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 after.black_pawn |= to_mask;
 
                 after.ep_target = Some(ply.to + 8);
+                after.halfmove = 0;
             }
             KINGSIDE_CASTLE => {
                 after.black_king &= from_mask;
@@ -364,11 +374,13 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                     after.white_queen &= !to_mask;
                 };
                 after.white &= !to_mask;
+                after.halfmove = 0;
             }
             EN_PASSANT => {
                 after.black_pawn &= from_mask;
                 after.black_pawn |= to_mask;
                 after.white_pawn &= !(1 << (ply.to + 8));
+                after.halfmove = 0;
                 after.white &= !(1 << (ply.to + 8));
             }
             KNIGHT_PROMO => {
@@ -408,6 +420,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                     after.white_queen &= !to_mask;
                 };
                 after.white &= !to_mask;
+                after.halfmove = 0;
             }
             BISHOP_PROMO_CAPTURE => {
                 after.black_pawn &= from_mask;
@@ -429,6 +442,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                     after.white_queen &= !to_mask;
                 };
                 after.white &= !to_mask;
+                after.halfmove = 0;
             }
             ROOK_PROMO_CAPTURE => {
                 after.black_pawn &= from_mask;
@@ -450,6 +464,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                     after.white_queen &= !to_mask;
                 };
                 after.white &= !to_mask;
+                after.halfmove = 0;
             }
             QUEEN_PROMO_CAPTURE => {
                 after.black_pawn &= from_mask;
@@ -471,6 +486,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                     after.white_queen &= !to_mask;
                 };
                 after.white &= !to_mask;
+                after.halfmove = 0;
             }
             _ => panic!("Move received in make_move has invalid Move.kind value"),
         }
