@@ -3,15 +3,15 @@ use crate::utils::*;
 
 // The Move representation
 #[derive(Debug)]
-struct Move {
-    piece: u8,
-    from: u8,
-    to: u8,
-    kind: u8,
+pub struct Move {
+    pub piece: u8,
+    pub from: u8,
+    pub to: u8,
+    pub kind: u8,
 }
 
 // Takes in a board  and a move and returns an updated board with the move made
-fn make_move(before: &Board, ply: &Move) -> Board {
+pub fn make_move(before: &Board, ply: &Move) -> Board {
     let mut after: Board = before.clone();
     let from_mask = !(1 << ply.from);
     let to_mask = 1 << ply.to;
@@ -25,7 +25,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 WHITE_PAWN => {
                     after.white_pawn &= from_mask;
                     after.white_pawn |= to_mask;
-                after.halfmove = 0;
+                    after.halfmove = 0;
                 }
                 WHITE_KNIGHT => {
                     after.white_knight &= from_mask;
@@ -263,7 +263,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
                 BLACK_PAWN => {
                     after.black_pawn &= from_mask;
                     after.black_pawn |= to_mask;
-                after.halfmove = 0;
+                    after.halfmove = 0;
                 }
                 BLACK_KNIGHT => {
                     after.black_knight &= from_mask;
@@ -504,7 +504,7 @@ fn make_move(before: &Board, ply: &Move) -> Board {
 }
 
 // Takes in a board state and returns a Vec of all legal moves
-fn legal_moves(board: &Board) -> Vec<Move> {
+pub fn legal_moves(board: &Board) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
     let rook_attacks = &MAGIC_TABLES.rook_attacks;
     let rook_magics = &MAGIC_TABLES.rook_magics;
@@ -1691,18 +1691,45 @@ fn starting_position() -> Board {
     }
 }
 
-fn perft(board: &Board, depth: u8) -> u64 {
-    if depth == 1 {
-        return legal_moves(board).len() as u64;
-    };
-    let mut count = 0;
+pub fn perft(board: &Board, depth: u8, first: bool) -> u64 {
 
-    let moves = legal_moves(board);
-    for ply in moves.iter() {
-        let new_board = make_move(board, &ply);
-        count += perft(&new_board, depth - 1);
+     if depth == 0 {
+        return 1;
+        };
+       if !first {
+       
+
+        let mut count = 0;
+        let moves = legal_moves(board);
+        for ply in moves.iter() {
+            let new_board = make_move(board, &ply);
+            count += perft(&new_board, depth - 1, false);
+        }
+        count
+    } else {
+        let mut count = 0;
+        let moves = legal_moves(board);
+        for ply in moves.iter() {
+            let new_board = make_move(board, &ply);
+            let i = perft(&new_board, depth - 1, false);
+            count += i;
+            let name = match ply.kind {
+                KNIGHT_PROMO => format!("{}{}N", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
+                KNIGHT_PROMO_CAPTURE => format!("{}{}N", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
+                BISHOP_PROMO => format!("{}{}B", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
+                BISHOP_PROMO_CAPTURE => format!("{}{}B", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
+                ROOK_PROMO => format!("{}{}R", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
+                ROOK_PROMO_CAPTURE => format!("{}{}R", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
+                QUEEN_PROMO => format!("{}{}Q", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
+                QUEEN_PROMO_CAPTURE => format!("{}{}Q", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
+                _ => format!("{}{}", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
+            };
+            println!("{} {}", name, i);
+        }
+        println!("");
+        println!("{}", count);
+        count
     }
-    count
 }
 
 fn perft_captures(board: &Board, depth: u8) -> u64 {
@@ -1747,14 +1774,26 @@ fn perft_ep(board: &Board, depth: u8) -> u64 {
     count
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::utils::*;
     use std::time::Instant;
 
- #[test]
+    #[test]
+    fn movemask() {
+        print_binary_board(ROOK_MOVE_MASKS[47] | BISHOP_MOVE_MASKS[47]);
+    }
+    #[test]
+    fn test_fen() {
+        let a = fen_to_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        let b = starting_position();
+
+        println!("fenboard: {:?}", a);
+        println!("startboard: {:?}", b);
+
+    }
+    #[test]
     fn test_perft_ep() {
         let hi = &MAGIC_TABLES;
         println!("{:?}", hi.rook_magics[50]);
@@ -1782,8 +1821,8 @@ mod tests {
         println!("{:?}", hi.rook_magics[50]);
         let board = starting_position();
         let now = Instant::now();
-        let perft = perft(&board, 5);
-        println!("Perft at depth 5: {}", perft);
+        let perft = perft(&board, 3, true);
+        println!("Perft at depth 3: {}", perft);
         println!("Elapsed time: {:?}", now.elapsed().as_secs());
     }
 
