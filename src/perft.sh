@@ -12,18 +12,18 @@ MOVES="${@:3}"
 
 # Call your existing Rust program
 # Assuming your program is set up to accept these command line arguments
-RESULT=$(cargo run --release -- perft "$DEPTH" "$FEN" $MOVES 2>/tmp/perft_stderr.log)
+#RESULT=$(cargo run --release -- perft "$DEPTH" "$FEN" $MOVES 2>/tmp/perft_stderr.log)
+cargo run --release -- perft "$DEPTH" "$FEN" $MOVES 
 
-
-echo "$RESULT" | awk '
-/^[a-h][1-8][a-h][1-8]/ { 
-    moves[$1] = $2                  # Store move and its count in an array
-    print $1, $2                     # Print move and node count
-}
-END {
-    print ""                         # Add a blank line
-    total = 0                         # Initialize total nodes counter
-    for (move in moves) total += moves[move]  # Sum all counts
-    if (total > 0) print total       # Print total nodes
-}'
+#echo "$RESULT" | awk '
+#/^[a-h][1-8][a-h][1-8]/ { 
+#    moves[$1] = $2                  # Store move and its count in an array
+#    print $1, $2                     # Print move and node count
+#}
+#END {
+#    print ""                         # Add a blank line
+#    total = 0                         # Initialize total nodes counter
+#    for (move in moves) total += moves[move]  # Sum all counts
+#3    if (total > 0) print total       # Print total nodes
+#}'
 

@@ -543,6 +543,7 @@ pub fn legal_moves(board: &Board) -> Vec<Move> {
     }
 
     // Add bishop moves
+
     let bishop_positions = set_bit_positions(bishops);
     for position in bishop_positions {
         moves.extend(bishop_moves(
@@ -998,6 +999,13 @@ fn queen_moves(board: &Board, position: u8) -> Vec<Move> {
     let rook_magic = MAGIC_TABLES.rook_magics[position as usize];
     let mut moves = bishop_moves(board, position, bishop_attacks, bishop_magic);
     moves.extend(rook_moves(board, position, rook_attacks, rook_magic));
+    for ply in moves.iter_mut() {
+        if board.turn {
+            ply.piece = WHITE_QUEEN;
+        } else {
+            ply.piece = BLACK_QUEEN;
+        }
+    }
     moves
 }
 
@@ -1692,13 +1700,10 @@ fn starting_position() -> Board {
 }
 
 pub fn perft(board: &Board, depth: u8, first: bool) -> u64 {
-
-     if depth == 0 {
+    if depth == 0 {
         return 1;
-        };
-       if !first {
-       
-
+    };
+    if !first {
         let mut count = 0;
         let moves = legal_moves(board);
         for ply in moves.iter() {
@@ -1714,14 +1719,38 @@ pub fn perft(board: &Board, depth: u8, first: bool) -> u64 {
             let i = perft(&new_board, depth - 1, false);
             count += i;
             let name = match ply.kind {
-                KNIGHT_PROMO => format!("{}{}N", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
-                KNIGHT_PROMO_CAPTURE => format!("{}{}N", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
-                BISHOP_PROMO => format!("{}{}B", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
-                BISHOP_PROMO_CAPTURE => format!("{}{}B", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
-                ROOK_PROMO => format!("{}{}R", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
-                ROOK_PROMO_CAPTURE => format!("{}{}R", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
-                QUEEN_PROMO => format!("{}{}Q", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
-                QUEEN_PROMO_CAPTURE => format!("{}{}Q", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
+                KNIGHT_PROMO => format!(
+                    "{}{}n",
+                    SQUARES[ply.from as usize], SQUARES[ply.to as usize]
+                ),
+                KNIGHT_PROMO_CAPTURE => format!(
+                    "{}{}n",
+                    SQUARES[ply.from as usize], SQUARES[ply.to as usize]
+                ),
+                BISHOP_PROMO => format!(
+                    "{}{}b",
+                    SQUARES[ply.from as usize], SQUARES[ply.to as usize]
+                ),
+                BISHOP_PROMO_CAPTURE => format!(
+                    "{}{}b",
+                    SQUARES[ply.from as usize], SQUARES[ply.to as usize]
+                ),
+                ROOK_PROMO => format!(
+                    "{}{}r",
+                    SQUARES[ply.from as usize], SQUARES[ply.to as usize]
+                ),
+                ROOK_PROMO_CAPTURE => format!(
+                    "{}{}r",
+                    SQUARES[ply.from as usize], SQUARES[ply.to as usize]
+                ),
+                QUEEN_PROMO => format!(
+                    "{}{}q",
+                    SQUARES[ply.from as usize], SQUARES[ply.to as usize]
+                ),
+                QUEEN_PROMO_CAPTURE => format!(
+                    "{}{}q",
+                    SQUARES[ply.from as usize], SQUARES[ply.to as usize]
+                ),
                 _ => format!("{}{}", SQUARES[ply.from as usize], SQUARES[ply.to as usize]),
             };
             println!("{} {}", name, i);
@@ -1781,8 +1810,56 @@ mod tests {
     use std::time::Instant;
 
     #[test]
-    fn movemask() {
-        print_binary_board(ROOK_MOVE_MASKS[47] | BISHOP_MOVE_MASKS[47]);
+    fn movetest() {
+        let board = starting_position();
+        let e2e4 = Move {
+            piece: WHITE_PAWN,
+            from: 12,
+            to: 28,
+            kind: DOUBLE_PAWN_PUSH,
+        };
+        let board2 = make_move(&board, &e2e4);
+
+        let a7a6 = Move {
+            piece: BLACK_PAWN,
+            from: 48,
+            to: 40,
+            kind: QUIET_MOVE,
+        };
+        let board3 = make_move(&board2, &a7a6);
+
+        let d1h5 = Move {
+            piece: WHITE_QUEEN,
+            from: 3,
+            to: 39,
+            kind: QUIET_MOVE,
+        };
+        let board4 = make_move(&board3, &d1h5);
+
+        let a6a5 = Move {
+            piece: BLACK_PAWN,
+            from: 40,
+            to: 32,
+            kind: QUIET_MOVE,
+        };
+        let board5 = make_move(&board4, &a6a5);
+        /*
+                println!("");
+                println!("Whole board:");
+                println!("");
+                print_binary_board(board5.white | board5.black);
+                println!("");
+                println!("Black pawn:");
+                println!("");
+                print_binary_board(board5.black_pawn);
+                 println!("White pawn:");
+                println!("");
+                print_binary_board(board5.white_pawn);
+                println!("White queen:");
+                println!("");
+                print_binary_board(board5.white_queen);
+        */
+        println!("{:?}", legal_moves(&board5));
     }
     #[test]
     fn test_fen() {
@@ -1791,7 +1868,6 @@ mod tests {
 
         println!("fenboard: {:?}", a);
         println!("startboard: {:?}", b);
-
     }
     #[test]
     fn test_perft_ep() {

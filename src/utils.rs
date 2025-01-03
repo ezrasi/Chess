@@ -51,79 +51,79 @@ pub fn fen_to_board(fen: &str) -> Board {
     };
 
     let mut parts = fen.split_whitespace();
-    
+
     // Parse the piece positions (big-endian format, row-by-row from rank 8 to rank 1)
     let board_str = parts.next().unwrap();
-    
+
     for (i, row) in board_str.split('/').enumerate() {
         let rank = 7 - i; // Adjust for big-endian (row 8 should be rank 7 in the array, row 7 should be rank 6, etc.)
         let mut col = 0;
-        
+
         // Iterate through the squares in each row (big-endian, left to right)
         for c in row.chars() {
             match c {
                 '1'..='8' => col += c.to_digit(10).unwrap() as usize, // Empty squares
-                'p' => { 
-                    board.black_pawn |= 1 << (rank * 8 + col); 
-                    board.black |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'r' => { 
-                    board.black_rook |= 1 << (rank * 8 + col); 
-                    board.black |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'n' => { 
-                    board.black_knight |= 1 << (rank * 8 + col); 
-                    board.black |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'b' => { 
-                    board.black_bishop |= 1 << (rank * 8 + col); 
-                    board.black |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'q' => { 
-                    board.black_queen |= 1 << (rank * 8 + col); 
-                    board.black |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'k' => { 
-                    board.black_king |= 1 << (rank * 8 + col); 
-                    board.black |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'P' => { 
-                    board.white_pawn |= 1 << (rank * 8 + col); 
-                    board.white |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'R' => { 
-                    board.white_rook |= 1 << (rank * 8 + col); 
-                    board.white |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'N' => { 
-                    board.white_knight |= 1 << (rank * 8 + col); 
-                    board.white |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'B' => { 
-                    board.white_bishop |= 1 << (rank * 8 + col); 
-                    board.white |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'Q' => { 
-                    board.white_queen |= 1 << (rank * 8 + col); 
-                    board.white |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                'K' => { 
-                    board.white_king |= 1 << (rank * 8 + col); 
-                    board.white |= 1 << (rank * 8 + col); 
-                    col += 1; 
-                },
-                _ => {},
+                'p' => {
+                    board.black_pawn |= 1 << (rank * 8 + col);
+                    board.black |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'r' => {
+                    board.black_rook |= 1 << (rank * 8 + col);
+                    board.black |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'n' => {
+                    board.black_knight |= 1 << (rank * 8 + col);
+                    board.black |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'b' => {
+                    board.black_bishop |= 1 << (rank * 8 + col);
+                    board.black |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'q' => {
+                    board.black_queen |= 1 << (rank * 8 + col);
+                    board.black |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'k' => {
+                    board.black_king |= 1 << (rank * 8 + col);
+                    board.black |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'P' => {
+                    board.white_pawn |= 1 << (rank * 8 + col);
+                    board.white |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'R' => {
+                    board.white_rook |= 1 << (rank * 8 + col);
+                    board.white |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'N' => {
+                    board.white_knight |= 1 << (rank * 8 + col);
+                    board.white |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'B' => {
+                    board.white_bishop |= 1 << (rank * 8 + col);
+                    board.white |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'Q' => {
+                    board.white_queen |= 1 << (rank * 8 + col);
+                    board.white |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                'K' => {
+                    board.white_king |= 1 << (rank * 8 + col);
+                    board.white |= 1 << (rank * 8 + col);
+                    col += 1;
+                }
+                _ => {}
             }
         }
     }
