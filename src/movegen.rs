@@ -1,5 +1,7 @@
 use crate::bitboard::MAGIC_TABLES;
 use crate::utils::*;
+use std::thread;
+use std::time::Instant;
 
 // The Move representation
 #[derive(Debug)]
@@ -17,6 +19,7 @@ pub fn make_move(before: &Board, ply: &Move) -> Board {
     let to_mask = 1 << ply.to;
 
     // a white move
+    //
     if before.turn {
         after.white &= from_mask;
         after.white |= to_mask;
@@ -1051,104 +1054,107 @@ fn king_moves(board: &Board, position: u8) -> Vec<Move> {
     }
 
     // castling
-    if board.turn {
-        if position == 4 {
-            // kingside castle
-            if ((color | other_color) & (1 << 5 | 1 << 6)) == 0 && board.white_kingside_castle {
-                // make sure king doesnt pass through check
-                let check_test = Move {
-                    piece,
-                    from: position,
-                    to: 5,
-                    kind: QUIET_MOVE,
-                };
-                let check_test_board = make_move(&board, &check_test);
-                if !in_check(&check_test_board, board.turn) {
-                    let ply = Move {
+    if !in_check(&board, board.turn) {
+        if board.turn {
+            if position == 4 {
+                // kingside castle
+                if ((color | other_color) & (1 << 5 | 1 << 6)) == 0 && board.white_kingside_castle {
+                    // make sure king doesnt pass through check
+                    let check_test = Move {
                         piece,
                         from: position,
-                        to: 6,
-                        kind: KINGSIDE_CASTLE,
+                        to: 5,
+                        kind: QUIET_MOVE,
                     };
-                    let new_board = make_move(&board, &ply);
-                    if !in_check(&new_board, board.turn) {
-                        moves.push(ply);
+                    let check_test_board = make_move(&board, &check_test);
+                    if !in_check(&check_test_board, board.turn) {
+                        let ply = Move {
+                            piece,
+                            from: position,
+                            to: 6,
+                            kind: KINGSIDE_CASTLE,
+                        };
+                        let new_board = make_move(&board, &ply);
+                        if !in_check(&new_board, board.turn) {
+                            moves.push(ply);
+                        }
+                    }
+                }
+                // queenside castle
+                if ((color | other_color) & (1 << 1 | 1 << 2 | 1 << 3)) == 0
+                    && board.white_queenside_castle
+                {
+                    // make sure king doesnt pass through check
+                    let check_test = Move {
+                        piece,
+                        from: position,
+                        to: 3,
+                        kind: QUIET_MOVE,
+                    };
+                    let check_test_board = make_move(&board, &check_test);
+                    if !in_check(&check_test_board, board.turn) {
+                        let ply = Move {
+                            piece,
+                            from: position,
+                            to: 2,
+                            kind: QUEENSIDE_CASTLE,
+                        };
+                        let new_board = make_move(&board, &ply);
+                        if !in_check(&new_board, board.turn) {
+                            moves.push(ply);
+                        }
                     }
                 }
             }
-            // queenside castle
-            if ((color | other_color) & (1 << 1 | 1 << 2 | 1 << 3)) == 0
-                && board.white_queenside_castle
-            {
-                // make sure king doesnt pass through check
-                let check_test = Move {
-                    piece,
-                    from: position,
-                    to: 3,
-                    kind: QUIET_MOVE,
-                };
-                let check_test_board = make_move(&board, &check_test);
-                if !in_check(&check_test_board, board.turn) {
-                    let ply = Move {
+        } else {
+            if position == 60 {
+                // kingside castle
+                if ((color | other_color) & (1 << 61 | 1 << 62)) == 0 && board.black_kingside_castle
+                {
+                    // make sure king doesnt pass through check
+                    let check_test = Move {
                         piece,
                         from: position,
-                        to: 2,
-                        kind: QUEENSIDE_CASTLE,
+                        to: 61,
+                        kind: QUIET_MOVE,
                     };
-                    let new_board = make_move(&board, &ply);
-                    if !in_check(&new_board, board.turn) {
-                        moves.push(ply);
+                    let check_test_board = make_move(&board, &check_test);
+                    if !in_check(&check_test_board, board.turn) {
+                        let ply = Move {
+                            piece,
+                            from: position,
+                            to: 62,
+                            kind: KINGSIDE_CASTLE,
+                        };
+                        let new_board = make_move(&board, &ply);
+                        if !in_check(&new_board, board.turn) {
+                            moves.push(ply);
+                        }
                     }
                 }
-            }
-        }
-    } else {
-        if position == 60 {
-            // kingside castle
-            if ((color | other_color) & (1 << 61 | 1 << 62)) == 0 && board.black_kingside_castle {
-                // make sure king doesnt pass through check
-                let check_test = Move {
-                    piece,
-                    from: position,
-                    to: 61,
-                    kind: QUIET_MOVE,
-                };
-                let check_test_board = make_move(&board, &check_test);
-                if !in_check(&check_test_board, board.turn) {
-                    let ply = Move {
+                // queenside castle
+                if ((color | other_color) & (1 << 57 | 1 << 58 | 1 << 59)) == 0
+                    && board.black_queenside_castle
+                {
+                    // make sure king doesnt pass through check
+                    let check_test = Move {
                         piece,
                         from: position,
-                        to: 62,
-                        kind: KINGSIDE_CASTLE,
+                        to: 59,
+                        kind: QUIET_MOVE,
                     };
-                    let new_board = make_move(&board, &ply);
-                    if !in_check(&new_board, board.turn) {
-                        moves.push(ply);
-                    }
-                }
-            }
-            // queenside castle
-            if ((color | other_color) & (1 << 57 | 1 << 58 | 1 << 59)) == 0
-                && board.black_queenside_castle
-            {
-                // make sure king doesnt pass through check
-                let check_test = Move {
-                    piece,
-                    from: position,
-                    to: 59,
-                    kind: QUIET_MOVE,
-                };
-                let check_test_board = make_move(&board, &check_test);
-                if !in_check(&check_test_board, board.turn) {
-                    let ply = Move {
-                        piece,
-                        from: position,
-                        to: 58,
-                        kind: QUEENSIDE_CASTLE,
-                    };
-                    let new_board = make_move(&board, &ply);
-                    if !in_check(&new_board, board.turn) {
-                        moves.push(ply);
+                    let check_test_board = make_move(&board, &check_test);
+                    if !in_check(&check_test_board, board.turn) {
+                        let ply = Move {
+                            piece,
+                            from: position,
+                            to: 58,
+                            kind: QUEENSIDE_CASTLE,
+                        };
+                        let new_board = make_move(&board, &ply);
+                        if !in_check(&new_board, board.turn) {
+                            moves.push(ply);
+                        }
                     }
                 }
             }
@@ -1700,6 +1706,54 @@ fn starting_position() -> Board {
 }
 
 pub fn perft(board: &Board, depth: u8, first: bool) -> u64 {
+    let now = Instant::now();
+    let moves = legal_moves(board);
+
+    let mut handles = Vec::with_capacity(moves.len());
+
+    for ply in moves.iter() {
+       
+            let new_board = make_move(board, &ply);
+            let handle = thread::spawn( move || { perft_helper(&new_board, depth - 1)});
+            handles.push(handle);
+        
+    }
+
+    let mut count = 0;
+
+    for handle in handles {
+        let result = handle.join().unwrap();
+        count += result;
+    };
+    
+    println!("");
+        println!("{}", count);
+
+    println!("");
+      println!("Finished in {} seconds", now.elapsed().as_secs());
+ 
+    count
+}
+fn perft_helper(board: &Board, depth: u8) -> u64 {
+    if depth == 0 {
+        return 1;
+    }
+ if depth == 1 {
+        return legal_moves(board).len() as u64;
+    }
+    let mut count = 0;
+    let moves = legal_moves(board);
+
+       for ply in moves.iter() {
+            let new_board = make_move(board, &ply);
+            count += perft_helper(&new_board, depth - 1);
+        
+    }
+    count
+}
+
+/*
+pub fn perft(board: &Board, depth: u8, first: bool) -> u64 {
     if depth == 0 {
         return 1;
     };
@@ -1760,7 +1814,7 @@ pub fn perft(board: &Board, depth: u8, first: bool) -> u64 {
         count
     }
 }
-
+*/
 fn perft_captures(board: &Board, depth: u8) -> u64 {
     if depth == 1 {
         let moves = legal_moves(board);

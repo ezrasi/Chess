@@ -42,9 +42,7 @@ fn main() {
             // Find the move in legal moves that matches from and to squares
             let legal_moves = movegen::legal_moves(&board);
             let mv = match legal_moves.iter().find(|m| m.from == from && m.to == to) {
-                Some(m) => {
-                    m
-                }
+                Some(m) => m,
                 None => {
                     println!("Invalid move: {}", mv);
                     return;
