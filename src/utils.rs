@@ -2,13 +2,11 @@
 // It takes in a u64 and outputs a Vec of the indices of the on bits
 pub fn set_bit_positions(mut number: u64) -> Vec<u8> {
     let mut result: Vec<u8> = Vec::new();
-    for i in 0..64 {
-        if (number & 1) == 1 {
-            result.push(i);
-        }
-        number = number >> 1;
+    while number != 0 {
+        result.push(number.trailing_zeros() as u8);
+        number &= number - 1;  // Clear the least significant set bit
     }
-    result
+       result
 }
 
 pub fn print_binary_board(value: u64) {
