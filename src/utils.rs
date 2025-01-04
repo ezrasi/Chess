@@ -4,9 +4,9 @@ pub fn set_bit_positions(mut number: u64) -> Vec<u8> {
     let mut result: Vec<u8> = Vec::new();
     while number != 0 {
         result.push(number.trailing_zeros() as u8);
-        number &= number - 1;  // Clear the least significant set bit
+        number &= number - 1; // Clear the least significant set bit
     }
-       result
+    result
 }
 
 pub fn print_binary_board(value: u64) {
@@ -22,8 +22,9 @@ pub fn print_binary_board(value: u64) {
             println!("{}", std::str::from_utf8(chunk).unwrap());
         });
 }
-pub fn fen_to_board(fen: &str) -> Board {
-    let mut board = Board {
+
+fn blank_board() -> Board {
+    Board {
         white: 0,
         black: 0,
         white_pawn: 0,
@@ -38,125 +39,143 @@ pub fn fen_to_board(fen: &str) -> Board {
         black_rook: 0,
         black_queen: 0,
         black_king: 0,
-        turn: true, // Default to white's turn
-        white_kingside_castle: false,
-        white_queenside_castle: false,
-        black_kingside_castle: false,
-        black_queenside_castle: false,
+        turn: true,
+        white_kingside_castle: true,
+        white_queenside_castle: true,
+        black_kingside_castle: true,
+        black_queenside_castle: true,
         ep_target: None,
         halfmove: 0,
-        fullmove: 1,
-    };
+        fullmove: 0,
+    }
+}
 
-    let mut parts = fen.split_whitespace();
+// expects valid fen
+pub fn fen_to_board(fen: &str) -> Board {
+    let mut board = blank_board();
 
-    // Parse the piece positions (big-endian format, row-by-row from rank 8 to rank 1)
-    let board_str = parts.next().unwrap();
+    let parts: Vec<&str> = fen.split(' ').collect();
 
-    for (i, row) in board_str.split('/').enumerate() {
-        let rank = 7 - i; // Adjust for big-endian (row 8 should be rank 7 in the array, row 7 should be rank 6, etc.)
-        let mut col = 0;
+    // piece placement
+    let ranks = parts[0].split('/').rev();
+    let mut file: u8;
+    let mut rank_no: u8 = 0;
 
-        // Iterate through the squares in each row (big-endian, left to right)
-        for c in row.chars() {
-            match c {
-                '1'..='8' => col += c.to_digit(10).unwrap() as usize, // Empty squares
+    for rank in ranks {
+        file = 0;
+        for square in rank.chars() {
+            match square {
+                '1'..='8' => file += square.to_digit(10).unwrap() as u8,
                 'p' => {
-                    board.black_pawn |= 1 << (rank * 8 + col);
-                    board.black |= 1 << (rank * 8 + col);
-                    col += 1;
-                }
-                'r' => {
-                    board.black_rook |= 1 << (rank * 8 + col);
-                    board.black |= 1 << (rank * 8 + col);
-                    col += 1;
+                    board.black |= 1 << (8 * rank_no + file);
+                    board.black_pawn |= 1 << (8 * rank_no + file);
+                    file += 1;
                 }
                 'n' => {
-                    board.black_knight |= 1 << (rank * 8 + col);
-                    board.black |= 1 << (rank * 8 + col);
-                    col += 1;
+                    board.black |= 1 << (8 * rank_no + file);
+                    board.black_knight |= 1 << (8 * rank_no + file);
+                    file += 1;
                 }
                 'b' => {
-                    board.black_bishop |= 1 << (rank * 8 + col);
-                    board.black |= 1 << (rank * 8 + col);
-                    col += 1;
+                    board.black |= 1 << (8 * rank_no + file);
+                    board.black_bishop |= 1 << (8 * rank_no + file);
+                    file += 1;
+                }
+                'r' => {
+                    board.black |= 1 << (8 * rank_no + file);
+                    board.black_rook |= 1 << (8 * rank_no + file);
+                    file += 1;
                 }
                 'q' => {
-                    board.black_queen |= 1 << (rank * 8 + col);
-                    board.black |= 1 << (rank * 8 + col);
-                    col += 1;
+                    board.black |= 1 << (8 * rank_no + file);
+                    board.black_queen |= 1 << (8 * rank_no + file);
+                    file += 1;
                 }
                 'k' => {
-                    board.black_king |= 1 << (rank * 8 + col);
-                    board.black |= 1 << (rank * 8 + col);
-                    col += 1;
+                    board.black |= 1 << (8 * rank_no + file);
+                    board.black_king |= 1 << (8 * rank_no + file);
+                    file += 1;
                 }
                 'P' => {
-                    board.white_pawn |= 1 << (rank * 8 + col);
-                    board.white |= 1 << (rank * 8 + col);
-                    col += 1;
+                    board.white |= 1 << (8 * rank_no + file);
+                    board.white_pawn |= 1 << (8 * rank_no + file);
+                    file += 1;
                 }
-                'R' => {
-                    board.white_rook |= 1 << (rank * 8 + col);
-                    board.white |= 1 << (rank * 8 + col);
-                    col += 1;
-                }
+
                 'N' => {
-                    board.white_knight |= 1 << (rank * 8 + col);
-                    board.white |= 1 << (rank * 8 + col);
-                    col += 1;
+                    board.white |= 1 << (8 * rank_no + file);
+                    board.white_knight |= 1 << (8 * rank_no + file);
+                    file += 1;
                 }
                 'B' => {
-                    board.white_bishop |= 1 << (rank * 8 + col);
-                    board.white |= 1 << (rank * 8 + col);
-                    col += 1;
+                    board.white |= 1 << (8 * rank_no + file);
+                    board.white_bishop |= 1 << (8 * rank_no + file);
+                    file += 1;
+                }
+                'R' => {
+                    board.white |= 1 << (8 * rank_no + file);
+                    board.white_rook |= 1 << (8 * rank_no + file);
+                    file += 1;
                 }
                 'Q' => {
-                    board.white_queen |= 1 << (rank * 8 + col);
-                    board.white |= 1 << (rank * 8 + col);
-                    col += 1;
+                    board.white |= 1 << (8 * rank_no + file);
+                    board.white_queen |= 1 << (8 * rank_no + file);
+                    file += 1;
                 }
                 'K' => {
-                    board.white_king |= 1 << (rank * 8 + col);
-                    board.white |= 1 << (rank * 8 + col);
-                    col += 1;
+                    board.white |= 1 << (8 * rank_no + file);
+                    board.white_king |= 1 << (8 * rank_no + file);
+                    file += 1;
                 }
-                _ => {}
+
+                _ => panic!("Invalid fen"),
             }
         }
+
+        rank_no += 1;
     }
 
-    // Parse turn
-    let turn = parts.next().unwrap();
-    board.turn = turn == "w";
+    // side to move
+    let side = parts[1];
+    board.turn = side == "w";
 
-    // Parse castling rights
-    let castling_rights = parts.next().unwrap();
-    for c in castling_rights.chars() {
-        match c {
-            'K' => board.white_kingside_castle = true,
-            'Q' => board.white_queenside_castle = true,
-            'k' => board.black_kingside_castle = true,
-            'q' => board.black_queenside_castle = true,
-            _ => {}
+    // castling rights
+    board.white_kingside_castle = false;
+    board.white_queenside_castle = false;
+    board.black_kingside_castle = false;
+    board.black_queenside_castle = false;
+
+    let rights = parts[2];
+    for right in rights.chars() {
+        match right {
+            '-' => {}
+            'K' => {
+                board.white_kingside_castle = true;
+            }
+            'Q' => {
+                board.white_queenside_castle = true;
+            }
+            'k' => {
+                board.black_kingside_castle = true;
+            }
+            'q' => {
+                board.black_queenside_castle = true;
+            }
+            _ => panic!("Invalid fen"),
         }
     }
 
-    // Parse en-passant target square
-    let ep_target = parts.next().unwrap();
-    if ep_target != "-" {
-        let ep_col = ep_target.chars().next().unwrap() as usize - 'a' as usize;
-        let ep_row = ep_target[1..].parse::<usize>().unwrap() - 1;
-        board.ep_target = Some((ep_row * 8 + ep_col) as u8);
-    } else {
-        board.ep_target = None;
+    // ep target
+    let target = parts[3];
+
+    if target != "-" {
+        let file = target.chars().next().unwrap() as u8 - 'a' as u8;
+        let rank = target.chars().next().unwrap().to_digit(10).unwrap();
+        board.ep_target = Some((8 * rank) as u8 + file);
     }
 
-    // Parse halfmove clock
-    board.halfmove = parts.next().unwrap().parse().unwrap();
-
-    // Parse fullmove number
-    board.fullmove = parts.next().unwrap().parse().unwrap();
+    board.halfmove = parts[4].chars().next().unwrap() as u16;
+    board.fullmove = parts[5].chars().next().unwrap() as u16;
 
     board
 }
