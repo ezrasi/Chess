@@ -2,6 +2,7 @@ mod bitboard;
 mod board;
 mod movegen;
 mod utils;
+mod perft;
 
 use crate::utils::fen_to_board;
 use std::env;
@@ -54,7 +55,7 @@ fn main() {
     }
 
     // Run perft
-    movegen::perft(&board, depth, true);
+    perft::perft(&board, depth);
 }
 
 fn square_to_index(square: &str) -> u8 {
