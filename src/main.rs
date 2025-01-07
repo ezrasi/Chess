@@ -1,5 +1,4 @@
 mod bitboard;
-mod board;
 mod movegen;
 mod utils;
 mod perft;
