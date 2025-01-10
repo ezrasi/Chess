@@ -12,6 +12,29 @@ pub struct Move {
     pub kind: u8,
 }
 
+/* 
+1. Extract Move Type Handlers: The massive match statement for move types could be split into separate functions like `handle_quiet_move()`, `handle_capture()`, `handle_promotion()`, etc. This would make the code more manageable and easier to test.
+
+2. Combine White/Black Logic: There's significant duplication between white and black move handling. Consider creating a unified move handler that takes color as a parameter and uses helper functions to handle the piece-specific logic. This could reduce the code size by almost half.
+
+3. Bitboard Operations: Create helper functions for common bitboard operations like `clear_square()`, `set_square()`, `move_piece()`. This would make the code more readable and reduce repetition of bit manipulation logic.
+
+4. Castling State Updates: Extract the castling rights updates into a separate function since this logic appears in multiple places and follows similar patterns.
+
+5. Piece Movement Class: Consider creating a `PieceMove` struct/enum system that encapsulates the movement rules and board updates for each piece type. This could help organize the piece-specific logic better.
+
+6. Capture Handling: The capture logic is repeated multiple times - it could be extracted into a separate function like `handle_capture(board, target_square, color)` that handles removing the captured piece and updating relevant state.
+
+7. Promotion Logic: Similar to captures, the promotion logic could be extracted into a separate function since it follows similar patterns across different promotion types.
+
+8. State Update Grouping: Group related state updates together into functions like `update_move_counters()`, `update_en_passant_state()`, etc.
+
+9. Error Handling: Instead of using panic!, consider returning a Result type for better error handling and recovery options.
+
+10. Board State Validation: Consider adding validation functions to ensure the board state remains consistent after moves.
+*/
+
+
 // Takes in a board  and a move and returns an updated board with the move made
 pub fn make_move(before: &Board, ply: &Move) -> Board {
     let mut after: Board = before.clone();
@@ -19,7 +42,6 @@ pub fn make_move(before: &Board, ply: &Move) -> Board {
     let to_mask = 1 << ply.to;
 
     // a white move
-    //
     if before.turn {
         after.white &= from_mask;
         after.white |= to_mask;
