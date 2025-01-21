@@ -94,6 +94,4 @@ mod tests {
         println!("Best: {:?}", best);
         println!("Eval: {eval}");
     }
-
-
 }

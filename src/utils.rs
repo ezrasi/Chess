@@ -1,3 +1,4 @@
+
 // This function returns a vec of all the on bit positions. e.g. 9 -> [0, 3]
 // It takes in a u64 and outputs a Vec of the indices of the on bits
 pub fn set_bit_positions(mut number: u64) -> Vec<u8> {

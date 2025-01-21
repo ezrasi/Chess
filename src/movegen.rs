@@ -1254,9 +1254,9 @@ fn create_test_board() -> Board {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::perft::*;
     use crate::utils::*;
     use std::time::Instant;
-    use crate::perft::*;
 
     #[test]
     fn movetest() {
