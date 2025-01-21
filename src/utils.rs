@@ -50,6 +50,33 @@ fn blank_board() -> Board {
     }
 }
 
+pub fn starting_position() -> Board {
+    Board {
+        white: FIRST_RANK | SECOND_RANK,
+        black: SEVENTH_RANK | EIGHTH_RANK,
+        white_pawn: SECOND_RANK,
+        white_knight: 1 << 1 | 1 << 6,
+        white_bishop: 1 << 2 | 1 << 5,
+        white_rook: 1 << 0 | 1 << 7,
+        white_queen: 1 << 3,
+        white_king: 1 << 4,
+        black_pawn: SEVENTH_RANK,
+        black_knight: 1 << 57 | 1 << 62,
+        black_bishop: 1 << 58 | 1 << 61,
+        black_rook: 1 << 56 | 1 << 63,
+        black_queen: 1 << 59,
+        black_king: 1 << 60,
+        turn: true,
+        white_kingside_castle: true,
+        white_queenside_castle: true,
+        black_kingside_castle: true,
+        black_queenside_castle: true,
+        ep_target: None,
+        halfmove: 0,
+        fullmove: 1,
+    }
+}
+
 // expects valid fen
 pub fn fen_to_board(fen: &str) -> Board {
     let mut board = blank_board();
@@ -209,7 +236,7 @@ pub struct Board {
 }
 
 // The Move representation
-#[derive(Eq, Hash, PartialEq, Debug)]
+#[derive(Eq, Hash, PartialEq, Clone, Debug)]
 pub struct Move {
     pub piece: u8,
     pub from: u8,

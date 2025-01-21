@@ -1250,38 +1250,13 @@ fn create_test_board() -> Board {
         fullmove: 0,
     }
 }
-fn starting_position() -> Board {
-    Board {
-        white: FIRST_RANK | SECOND_RANK,
-        black: SEVENTH_RANK | EIGHTH_RANK,
-        white_pawn: SECOND_RANK,
-        white_knight: 1 << 1 | 1 << 6,
-        white_bishop: 1 << 2 | 1 << 5,
-        white_rook: 1 << 0 | 1 << 7,
-        white_queen: 1 << 3,
-        white_king: 1 << 4,
-        black_pawn: SEVENTH_RANK,
-        black_knight: 1 << 57 | 1 << 62,
-        black_bishop: 1 << 58 | 1 << 61,
-        black_rook: 1 << 56 | 1 << 63,
-        black_queen: 1 << 59,
-        black_king: 1 << 60,
-        turn: true,
-        white_kingside_castle: true,
-        white_queenside_castle: true,
-        black_kingside_castle: true,
-        black_queenside_castle: true,
-        ep_target: None,
-        halfmove: 0,
-        fullmove: 1,
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::utils::*;
     use std::time::Instant;
+    use crate::perft::*;
 
     #[test]
     fn movetest() {
@@ -1371,7 +1346,7 @@ mod tests {
         println!("{:?}", hi.rook_magics[50]);
         let board = starting_position();
         let now = Instant::now();
-        let perft = perft(&board, 3, true);
+        let perft = perft(&board, 3);
         println!("Perft at depth 3: {}", perft);
         println!("Elapsed time: {:?}", now.elapsed().as_secs());
     }

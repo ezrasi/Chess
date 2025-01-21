@@ -112,7 +112,7 @@ pub fn perft(board: &Board, depth: u8, first: bool) -> u64 {
     }
 }
 */
-fn perft_captures(board: &Board, depth: u8) -> u64 {
+pub fn perft_captures(board: &Board, depth: u8) -> u64 {
     if depth == 1 {
         let moves = legal_moves(board);
         let mut count = 0;
@@ -133,7 +133,7 @@ fn perft_captures(board: &Board, depth: u8) -> u64 {
     count
 }
 
-fn perft_ep(board: &Board, depth: u8) -> u64 {
+pub fn perft_ep(board: &Board, depth: u8) -> u64 {
     if depth == 1 {
         let moves = legal_moves(board);
         let mut count = 0;
