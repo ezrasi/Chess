@@ -15,6 +15,7 @@ pub struct MagicTables {
 lazy_static! {
     pub static ref MAGIC_TABLES: MagicTables = generate_magic_tables();
 }
+
 pub fn generate_magic_tables() -> MagicTables {
     let mut rook_attacks = Vec::new();
     let mut rook_magics = Vec::new();

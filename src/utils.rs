@@ -1,4 +1,3 @@
-
 // This function returns a vec of all the on bit positions. e.g. 9 -> [0, 3]
 // It takes in a u64 and outputs a Vec of the indices of the on bits
 pub fn set_bit_positions(mut number: u64) -> Vec<u8> {
@@ -76,6 +75,14 @@ pub fn starting_position() -> Board {
         halfmove: 0,
         fullmove: 1,
     }
+}
+
+pub fn square_to_index(square: &str) -> u8 {
+    let chars: Vec<char> = square.chars().collect();
+    let mut index = 0;
+    index += chars[0] as u8 - b'a';
+    index += 8 * (chars[1] as u8 - b'1');
+    index
 }
 
 // expects valid fen
