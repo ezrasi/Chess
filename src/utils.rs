@@ -208,6 +208,15 @@ pub struct Board {
     pub fullmove: u16,
 }
 
+// The Move representation
+#[derive(Eq, Hash, PartialEq, Debug)]
+pub struct Move {
+    pub piece: u8,
+    pub from: u8,
+    pub to: u8,
+    pub kind: u8,
+}
+
 // a-file             0x0101010101010101
 // h-file             0x8080808080808080
 // 1st rank           0x00000000000000FF

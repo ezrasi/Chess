@@ -1,8 +1,8 @@
 mod bitboard;
+mod eval;
 mod movegen;
-mod utils;
 mod perft;
+mod search;
+mod utils;
 
-fn main() {
-  
-}
+fn main() {}

@@ -1,8 +1,7 @@
-
-use std::thread;
-use std::time::Instant;
 use crate::movegen::*;
 use crate::utils::*;
+use std::thread;
+use std::time::Instant;
 
 pub fn perft(board: &Board, depth: u8) -> u64 {
     let now = Instant::now();
@@ -154,4 +153,3 @@ fn perft_ep(board: &Board, depth: u8) -> u64 {
     }
     count
 }
-

@@ -3,16 +3,7 @@ use crate::utils::*;
 use std::thread;
 use std::time::Instant;
 
-// The Move representation
-#[derive(Debug)]
-pub struct Move {
-    pub piece: u8,
-    pub from: u8,
-    pub to: u8,
-    pub kind: u8,
-}
-
-/* 
+/*
 1. Extract Move Type Handlers: The massive match statement for move types could be split into separate functions like `handle_quiet_move()`, `handle_capture()`, `handle_promotion()`, etc. This would make the code more manageable and easier to test.
 
 2. Combine White/Black Logic: There's significant duplication between white and black move handling. Consider creating a unified move handler that takes color as a parameter and uses helper functions to handle the piece-specific logic. This could reduce the code size by almost half.
@@ -33,7 +24,6 @@ pub struct Move {
 
 10. Board State Validation: Consider adding validation functions to ensure the board state remains consistent after moves.
 */
-
 
 // Takes in a board  and a move and returns an updated board with the move made
 pub fn make_move(before: &Board, ply: &Move) -> Board {
