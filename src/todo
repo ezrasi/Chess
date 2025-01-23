@@ -1,3 +1,6 @@
+1/23/25:
+  1. Account for end of game in search function
+
 1/21/25:
   1. Continue writing search function
   2. Impove eval
