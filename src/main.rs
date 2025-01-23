@@ -4,10 +4,12 @@ mod bitboard;
 mod eval;
 mod movegen;
 mod perft;
+mod play;
 mod search;
 mod utils;
-use crate::utils::*;
+use crate::play::*;
 use crate::search::*;
+use crate::utils::*;
 use regex::Regex;
 use std::io::{stdin, stdout, Write};
 use std::thread;
@@ -51,26 +53,19 @@ fn main() {
         if let Some(captures) = re.captures(command) {
             let move_list = &captures[2];
             for mv in move_list.split_whitespace() {
-                let from = square_to_index(&mv[0..2]);
-                let to = square_to_index(&mv[2..4]);
-                // Find the move in legal moves that matches from and to squares
-                let legal_moves = movegen::legal_moves(&board);
-                let mv = match legal_moves.iter().find(|m| m.from == from && m.to == to) {
-                    Some(m) => m,
-                    None => {
-                        println!("Invalid move: {}", mv);
-                        return;
-                    }
-                };
-                board = movegen::make_move(&board, mv);
+                make_user_move(mv, &mut board);
             }
-            print_binary_board(board.white);
+            print_binary_board(board.white | board.black);
         }
 
         if command == "go" {
             let (best, eval) = best_move(&board, 1);
             println!("{:?}", best);
             println!("evaluation: {eval}");
+        }
+
+        if command == "play" {
+            play_game(&board);
         }
     }
 }

@@ -1106,7 +1106,7 @@ fn king_moves(board: &Board, position: u8) -> Vec<Move> {
     moves
 }
 // Checks if the king of the current player is in check
-fn in_check(board: &Board, color: bool) -> bool {
+pub fn in_check(board: &Board, color: bool) -> bool {
     // check knight squares
     // check diagonals until obstructed for queens/bishops
     //      check appropriate squares for pawn attacks
