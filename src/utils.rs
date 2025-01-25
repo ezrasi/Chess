@@ -85,6 +85,23 @@ pub fn square_to_index(square: &str) -> u8 {
     index
 }
 
+pub fn index_to_square(index: u8) -> String {
+
+
+    let mut square = String::new();
+
+    // file
+    if index % 8 == 0 {
+        square.push('a');
+    }
+
+
+    square
+
+
+
+
+}
 // expects valid fen
 pub fn fen_to_board(fen: &str) -> Board {
     let mut board = blank_board();
