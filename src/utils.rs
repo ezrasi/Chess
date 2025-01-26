@@ -87,19 +87,28 @@ pub fn square_to_index(square: &str) -> u8 {
 
 pub fn index_to_square(index: u8) -> String {
 
-
     let mut square = String::new();
 
     // file
-    if index % 8 == 0 {
-        square.push('a');
+    let file;
+    match index % 8 {
+        0 => file = 'a',
+        1 => file = 'b',
+        2 => file = 'c',
+        3 => file = 'd',
+        4 => file = 'e',
+        5 => file = 'f',
+        6 => file = 'g',
+        7 => file = 'h',
+        _ => panic!("Mod 8 was >= 8 ?!?!?!")
     }
+    square.push(file);
 
-
+    // rank
+    let rank = (index / 8);
+    square.push((b'0' + rank + 1) as char);
+    
     square
-
-
-
 
 }
 // expects valid fen
@@ -686,3 +695,20 @@ pub const KING_MOVE_MASKS: [u64; 64] = [
     11592265440851656704,
     4665729213955833856,
 ];
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn index_square() {
+        let e4 = index_to_square(28);
+        assert_eq!(e4, "e4");
+        let g7 = index_to_square(54);
+        assert_eq!(g7, "g7");
+
+    }
+
+}
+

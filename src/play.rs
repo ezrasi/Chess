@@ -28,12 +28,17 @@ pub fn play_game(board_param: &Board) {
     if engine_color == 0 {
         println!("Type moves with format e2e4, d7d8q, e1g1 (castling). Good luck. You may begin");
 
+        println!();
+        println!("{}.", board.fullmove);
+        
         // make user move
         let mut user_move = String::new();
             stdin()
                 .read_line(&mut user_move)
                 .expect("failed to readline");
         while user_move.trim() != "quit" {
+
+
             
 
             make_user_move(&user_move, &mut board);
@@ -45,7 +50,10 @@ pub fn play_game(board_param: &Board) {
                 println!("You win!");
                 break;
             }
-            println!("{} to {}", best.from, best.to);
+            println!("{} to {}", index_to_square(best.from), index_to_square(best.to));
+
+            println!();
+            println!("{}.", board.fullmove);
 
             user_move.clear();
             stdin()
