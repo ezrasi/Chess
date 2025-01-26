@@ -4,7 +4,7 @@ use crate::movegen::make_move;
 use crate::utils::*;
 
 // still need to account for checkmate and stalemate
-pub fn best_move(board: &Board, depth: u8) -> (Move, f32) {
+pub fn best_move(board: &Board, depth: u8) -> (Option<Move>, f32) {
     let possibilities = legal_moves(board);
     let mut evaluations = Vec::new();
 
@@ -41,7 +41,7 @@ pub fn best_move(board: &Board, depth: u8) -> (Move, f32) {
         i += 1;
     }
 
-    (possibilities[i].clone(), best)
+    (Some(possibilities[i].clone()), best)
 }
 
 fn best_move_helper(board: &Board, depth: u8) -> f32 {
