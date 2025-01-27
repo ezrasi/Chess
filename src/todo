@@ -1,3 +1,6 @@
+1/27/25:
+  1. Improve eval and search
+
 1/25/25:
   1. Adjust search function to return (None, eval) for checkmate and stalemate
   2. Adjust play.rs to unwrap Move return and handle None case
