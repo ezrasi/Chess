@@ -6,6 +6,12 @@ use crate::utils::*;
 // still need to account for checkmate and stalemate
 pub fn best_move(board: &Board, depth: u8) -> (Option<Move>, f32) {
     let possibilities = legal_moves(board);
+
+    // check for stalemate or checkmate
+    if possibilities.len() == 0 {
+        return (None, eval(board));
+    }
+
     let mut evaluations = Vec::new();
 
     for ply in possibilities.iter() {

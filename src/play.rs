@@ -1,3 +1,4 @@
+use crate::eval::*;
 use crate::movegen::*;
 use crate::search::*;
 use crate::utils::*;
@@ -11,6 +12,7 @@ pub fn play_game(board_param: &Board) {
         .read_line(&mut user_color)
         .expect("failed to readline");
 
+    // white = 1, black = 0
     let mut engine_color = 0;
 
     if user_color.trim() == "black" {
@@ -19,38 +21,57 @@ pub fn play_game(board_param: &Board) {
 
     println!("engine depth?");
     let mut depth_string = String::new();
-     stdin()
+    stdin()
         .read_line(&mut depth_string)
         .expect("failed to readline");
     let depth = depth_string.trim().parse::<u8>().unwrap();
-
+    // returns true if game is over
+    let ending = |evaluation: f32, is_user: bool| {
+        if evaluation == 0.0 {
+            println!("Stalemate");
+        } else {
+            println!("Checkmate.");
+            if is_user {
+                println!("You win!");
+            } else {
+                println!("I win!");
+            }
+        }
+    };
 
     if engine_color == 0 {
         println!("Type moves with format e2e4, d7d8q, e1g1 (castling). Good luck. You may begin");
 
         println!();
         println!("{}.", board.fullmove);
-        
+
         // make user move
         let mut user_move = String::new();
-            stdin()
-                .read_line(&mut user_move)
-                .expect("failed to readline");
+        stdin()
+            .read_line(&mut user_move)
+            .expect("failed to readline");
         while user_move.trim() != "quit" {
-
-
-            
-
             make_user_move(&user_move, &mut board);
 
             // now make engine move
             let (best, eval) = best_move(&board, depth);
-            board = make_move(&board, &best);
-            if (eval == f32::INFINITY || eval == f32::NEG_INFINITY) && legal_moves(&board).len() == 0 {
-                println!("You win!");
+
+            if let Some(unwrapped) = best {
+                println!(
+                    "{} to {}",
+                    index_to_square(unwrapped.from),
+                    index_to_square(unwrapped.to)
+                );
+                board = make_move(&board, &unwrapped);
+                let (user_option, user_eval) = best_move(&board, 1);
+                if user_option.is_none() {
+                    ending(eval, false);
+                    break;
+                }
+            } else {
+                ending(eval, true);
                 break;
             }
-            println!("{} to {}", index_to_square(best.from), index_to_square(best.to));
 
             println!();
             println!("{}.", board.fullmove);
@@ -59,8 +80,7 @@ pub fn play_game(board_param: &Board) {
             stdin()
                 .read_line(&mut user_move)
                 .expect("failed to readline");
-
-                   }
+        }
     }
 }
 
