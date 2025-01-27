@@ -2,6 +2,7 @@ use crate::eval::*;
 use crate::movegen::*;
 use crate::search::*;
 use crate::utils::*;
+use crate::Regex;
 use std::io::{stdin, stdout, Write};
 
 pub fn play_game(board_param: &Board) {
@@ -50,31 +51,43 @@ pub fn play_game(board_param: &Board) {
         stdin()
             .read_line(&mut user_move)
             .expect("failed to readline");
+
+        let re = Regex::new(r"^([A-Ha-h][1-8]){2}[nbrqNBRQ]?$").unwrap();
+
         while user_move.trim() != "quit" {
-            make_user_move(&user_move, &mut board);
 
-            // now make engine move
-            let (best, eval) = best_move(&board, depth);
+            // make sure move is valid syntax
+            if re.is_match(user_move.trim()) {
 
-            if let Some(unwrapped) = best {
-                println!(
-                    "{} to {}",
-                    index_to_square(unwrapped.from),
-                    index_to_square(unwrapped.to)
-                );
-                board = make_move(&board, &unwrapped);
-                let (user_option, user_eval) = best_move(&board, 1);
-                if user_option.is_none() {
-                    ending(eval, false);
-                    break;
+                // make sure move is legal
+                if make_user_move(&user_move, &mut board) {
+                    // now make engine move
+                    let (best, eval) = best_move(&board, depth);
+
+                    if let Some(unwrapped) = best {
+                        println!(
+                            "{} to {}",
+                            index_to_square(unwrapped.from),
+                            index_to_square(unwrapped.to)
+                        );
+                        board = make_move(&board, &unwrapped);
+                        let (user_option, user_eval) = best_move(&board, 1);
+                        if user_option.is_none() {
+                            ending(eval, false);
+                            break;
+                        }
+                    } else {
+                        ending(eval, true);
+                        break;
+                    }
+
+                    println!();
+                    println!("{}.", board.fullmove);
                 }
             } else {
-                ending(eval, true);
-                break;
+                println!("Invalid move: {}", user_move.trim());
+                println!();
             }
-
-            println!();
-            println!("{}.", board.fullmove);
 
             user_move.clear();
             stdin()
@@ -84,7 +97,7 @@ pub fn play_game(board_param: &Board) {
     }
 }
 
-pub fn make_user_move(mv: &str, board: &mut Board) {
+pub fn make_user_move(mv: &str, board: &mut Board) -> bool {
     let from = square_to_index(&mv[0..2]);
     let to = square_to_index(&mv[2..4]);
     let mut is_promotion = false;
@@ -92,7 +105,6 @@ pub fn make_user_move(mv: &str, board: &mut Board) {
     let mut capture_promo = 0;
 
     if mv.trim().len() == 5 {
-        println!("Is promotion!");
         let mvstring: Vec<char> = mv.chars().collect();
         is_promotion = true;
         if mvstring[4] == 'n' {
@@ -125,8 +137,10 @@ pub fn make_user_move(mv: &str, board: &mut Board) {
         Some(m) => m,
         None => {
             println!("Invalid move: {}", mv);
-            return;
+            println!();
+            return false;
         }
     };
     *board = make_move(board, mv);
+    true
 }
