@@ -1,5 +1,8 @@
 1/27/25:
-  1. Improve eval and search
+  1. Implement 50 move rule in search 
+  2. Implement threefold repetition draw in search
+  3. Update search to return gamestate enum (Normal, Checkmate, Stalemate, 50moverule draw, repetition draw)
+  4. Update play.rs to handle gamestate enum from search rather than simple Option<Move>
 
 1/25/25:
   1. Adjust search function to return (None, eval) for checkmate and stalemate
