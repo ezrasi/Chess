@@ -1,3 +1,6 @@
+
+use std::collections::HashSet;
+
 // This function returns a vec of all the on bit positions. e.g. 9 -> [0, 3]
 // It takes in a u64 and outputs a Vec of the indices of the on bits
 pub fn set_bit_positions(mut number: u64) -> Vec<u8> {
@@ -109,6 +112,7 @@ pub fn index_to_square(index: u8) -> String {
 
     square
 }
+
 // expects valid fen
 pub fn fen_to_board(fen: &str) -> Board {
     let mut board = blank_board();
@@ -240,7 +244,7 @@ pub fn fen_to_board(fen: &str) -> Board {
 }
 
 // The Board representation.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Board {
     pub white: u64,
     pub black: u64,
@@ -705,4 +709,5 @@ mod tests {
         let g7 = index_to_square(54);
         assert_eq!(g7, "g7");
     }
+
 }
