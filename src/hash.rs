@@ -3,10 +3,10 @@ use lazy_static::lazy_static;
 
 
 lazy_static! {
-    pub static ref ZOBRIST_KEYS: Vec<u64> = generate_zobrist();
+    pub static ref ZOBRIST_KEYS: Vec<u64> = generate_zobrist_keys();
 }
 
-fn generate_zobrist() -> Vec<u64> {
+fn generate_zobrist_keys() -> Vec<u64> {
     let mut result: Vec<u64> = Vec::with_capacity(781);
     let length = result.len();
     for i in 0..length {

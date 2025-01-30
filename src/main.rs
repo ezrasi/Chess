@@ -19,10 +19,14 @@ fn main() {
     println!("Ike: A Chess Engine by Ezra S-I");
 
     // initialize bitboards
-    let mut handle = None;
-    handle = Some(thread::spawn(|| {
+    let mut init_handle = None;
+    init_handle = Some(thread::spawn(|| {
+        println!("Bitboard start!");
         let _ = &*bitboard::MAGIC_TABLES;
+        println!("Zobrist start!");
+        let _ = &*hash::ZOBRIST_KEYS;
     }));
+    
 
     let mut board = starting_position();
 
@@ -43,7 +47,7 @@ fn main() {
             println!("uciok");
         }
         if command == "isready" {
-            if let Some(thread_handle) = handle.take() {
+            if let Some(thread_handle) = init_handle.take() {
                 let _ = thread_handle.join();
             }
             println!("readyok");
