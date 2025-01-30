@@ -2,12 +2,12 @@
 
 mod bitboard;
 mod eval;
+mod hash;
 mod movegen;
 mod perft;
 mod play;
 mod search;
 mod utils;
-mod hash;
 use crate::play::*;
 use crate::search::*;
 use crate::utils::*;
@@ -21,12 +21,9 @@ fn main() {
     // initialize bitboards
     let mut init_handle = None;
     init_handle = Some(thread::spawn(|| {
-        println!("Bitboard start!");
         let _ = &*bitboard::MAGIC_TABLES;
-        println!("Zobrist start!");
         let _ = &*hash::ZOBRIST_KEYS;
     }));
-    
 
     let mut board = starting_position();
 

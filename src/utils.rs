@@ -1,7 +1,6 @@
-
+use crate::hash::zobrist_hash;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
-use crate::hash::zobrist_hash;
 
 // This function returns a vec of all the on bit positions. e.g. 9 -> [0, 3]
 // It takes in a u64 and outputs a Vec of the indices of the on bits
@@ -9,6 +8,15 @@ pub fn set_bit_positions(mut number: u64) -> Vec<u8> {
     let mut result: Vec<u8> = Vec::new();
     while number != 0 {
         result.push(number.trailing_zeros() as u8);
+        number &= number - 1; // Clear the least significant set bit
+    }
+    result
+}
+
+pub fn count_ones(mut number: u64) -> u8 {
+    let mut result = 0;
+    while number != 0 {
+        result += 1;
         number &= number - 1; // Clear the least significant set bit
     }
     result
@@ -275,26 +283,25 @@ pub struct Board {
 
 impl PartialEq for Board {
     fn eq(&self, other: &Self) -> bool {
-        self.white_pawn == other.white_pawn &&
-        self.white_knight == other.white_knight &&
-        self.white_bishop == other.white_bishop &&
-        self.white_rook == other.white_rook && 
-        self.white_queen == other.white_queen &&
-        self.white_king == other.white_king &&
-        self.black_pawn == other.black_pawn &&
-        self.black_knight == other.black_knight &&
-        self.black_bishop == other.black_bishop &&
-        self.black_rook == other.black_rook &&
-        self.black_queen == other.black_queen &&
-        self.black_king == other.black_king &&
-        self.turn == other.turn &&
-        self.white_kingside_castle == other.white_kingside_castle &&
-        self.white_queenside_castle == other.white_queenside_castle &&
-        self.black_kingside_castle == other.black_kingside_castle &&
-        self.black_queenside_castle == other.black_queenside_castle &&
-        self.ep_target == other.ep_target
+        self.white_pawn == other.white_pawn
+            && self.white_knight == other.white_knight
+            && self.white_bishop == other.white_bishop
+            && self.white_rook == other.white_rook
+            && self.white_queen == other.white_queen
+            && self.white_king == other.white_king
+            && self.black_pawn == other.black_pawn
+            && self.black_knight == other.black_knight
+            && self.black_bishop == other.black_bishop
+            && self.black_rook == other.black_rook
+            && self.black_queen == other.black_queen
+            && self.black_king == other.black_king
+            && self.turn == other.turn
+            && self.white_kingside_castle == other.white_kingside_castle
+            && self.white_queenside_castle == other.white_queenside_castle
+            && self.black_kingside_castle == other.black_kingside_castle
+            && self.black_queenside_castle == other.black_queenside_castle
+            && self.ep_target == other.ep_target
     }
-
 }
 
 impl Eq for Board {}
@@ -744,5 +751,4 @@ mod tests {
         let g7 = index_to_square(54);
         assert_eq!(g7, "g7");
     }
-
 }

@@ -41,7 +41,7 @@ pub fn play_game(board_param: &Board) {
     };
 
     if engine_color == 0 {
-        println!("Type moves with format e2e4, d7d8q, e1g1 (castling). Good luck. You may begin");
+        println!("Type moves with format e2e4, d7d8q, e1g1 (castling). Good luck. You may begin.");
 
         println!();
         println!("{}.", board.fullmove);
@@ -55,10 +55,8 @@ pub fn play_game(board_param: &Board) {
         let re = Regex::new(r"^([A-Ha-h][1-8]){2}[nbrqNBRQ]?$").unwrap();
 
         while user_move.trim() != "quit" {
-
             // make sure move is valid syntax
             if re.is_match(user_move.trim()) {
-
                 // make sure move is legal
                 if make_user_move(&user_move, &mut board) {
                     // now make engine move

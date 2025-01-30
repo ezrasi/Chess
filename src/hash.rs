@@ -1,7 +1,6 @@
 use crate::utils::*;
 use lazy_static::lazy_static;
 
-
 lazy_static! {
     pub static ref ZOBRIST_KEYS: Vec<u64> = generate_zobrist_keys();
 }
@@ -12,7 +11,7 @@ fn generate_zobrist_keys() -> Vec<u64> {
     result
 }
 
-/* 
+/*
 * 64(x) + position index
 * x changes for each piece type:
 * white_pawn = 0
@@ -27,8 +26,8 @@ fn generate_zobrist_keys() -> Vec<u64> {
 * black_rook = 9
 * black_queen = 10
 * black_king = 11
-*   
-* turn = 64(12) 
+*
+* turn = 64(12)
 * white_kingside_castle = 64(12) + 1
 * white_queenside_castle = 64(12) + 2
 * black_kingside_castle = 64(12) + 3
@@ -106,4 +105,4 @@ pub fn zobrist_hash(board: &Board) -> u64 {
     }
 
     hash
-   }               
+}

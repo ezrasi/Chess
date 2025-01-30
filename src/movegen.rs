@@ -1185,8 +1185,10 @@ pub fn in_check(board: &Board, color: bool) -> bool {
                     return true;
                 }
             } else {
-                if (pos == (king_pos_usize as u8) - 9) | (pos == (king_pos_usize as u8) - 7) {
-                    return true;
+                if king_pos_usize > 7 {
+                    if (pos == (king_pos_usize as u8) - 9) | (pos == (king_pos_usize as u8) - 7) {
+                        return true;
+                    }
                 }
             }
         }
