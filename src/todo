@@ -1,5 +1,5 @@
 1/27/25:
-  1. Implement 50 move rule in search (implement eq (ignore turn and move counters), partialeq, hash in util.rs for board representation) 
+  1. Implement 50 move rule in search
   2. Implement threefold repetition draw in search
   3. Update search to return gamestate enum (Normal, Checkmate, Stalemate, 50moverule draw, repetition draw)
   4. Update play.rs to handle gamestate enum from search rather than simple Option<Move>
