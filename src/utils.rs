@@ -244,7 +244,7 @@ pub fn fen_to_board(fen: &str) -> Board {
 }
 
 // The Board representation.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Hash)]
 pub struct Board {
     pub white: u64,
     pub black: u64,
@@ -270,6 +270,31 @@ pub struct Board {
     pub halfmove: u16,
     pub fullmove: u16,
 }
+
+impl PartialEq for Board {
+    fn eq(&self, other: &Self) -> bool {
+        self.white_pawn == other.white_pawn &&
+        self.white_knight == other.white_knight &&
+        self.white_bishop == other.white_bishop &&
+        self.white_rook == other.white_rook && 
+        self.white_queen == other.white_queen &&
+        self.white_king == other.white_king &&
+        self.black_pawn == other.black_pawn &&
+        self.black_knight == other.black_knight &&
+        self.black_bishop == other.black_bishop &&
+        self.black_rook == other.black_rook &&
+        self.black_queen == other.black_queen &&
+        self.black_king == other.black_king &&
+        self.white_kingside_castle == other.white_kingside_castle &&
+        self.white_queenside_castle == other.white_queenside_castle &&
+        self.black_kingside_castle == other.black_kingside_castle &&
+        self.black_queenside_castle == other.black_queenside_castle &&
+        self.ep_target == other.ep_target
+    }
+
+}
+
+impl Eq for Board {}
 
 // The Move representation
 #[derive(Eq, Hash, PartialEq, Clone, Debug)]
