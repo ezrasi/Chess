@@ -8,10 +8,7 @@ lazy_static! {
 
 fn generate_zobrist_keys() -> Vec<u64> {
     let mut result: Vec<u64> = Vec::with_capacity(781);
-    let length = result.len();
-    for i in 0..length {
-        result[i] = rand::random();
-    }
+    result.resize_with(781, rand::random);
     result
 }
 
@@ -103,8 +100,8 @@ pub fn zobrist_hash(board: &Board) -> u64 {
         hash ^= ZOBRIST_KEYS[772];
     }
 
-    if board.ep_target.is_some() {
-        let file = board.ep_target.unwrap() % 8;
+    if let Some(ep_square) = board.ep_target {
+        let file = ep_square % 8;
         hash ^= ZOBRIST_KEYS[773 + file as usize];
     }
 

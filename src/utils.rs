@@ -1,5 +1,7 @@
 
 use std::collections::HashSet;
+use std::hash::{Hash, Hasher};
+use crate::hash::zobrist_hash;
 
 // This function returns a vec of all the on bit positions. e.g. 9 -> [0, 3]
 // It takes in a u64 and outputs a Vec of the indices of the on bits
@@ -244,7 +246,7 @@ pub fn fen_to_board(fen: &str) -> Board {
 }
 
 // The Board representation.
-#[derive(Clone, Debug, Hash)]
+#[derive(Clone, Debug)]
 pub struct Board {
     pub white: u64,
     pub black: u64,
@@ -296,6 +298,13 @@ impl PartialEq for Board {
 }
 
 impl Eq for Board {}
+
+impl Hash for Board {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let hash_value = zobrist_hash(self);
+        state.write_u64(hash_value);
+    }
+}
 
 // The Move representation
 #[derive(Eq, Hash, PartialEq, Clone, Debug)]
