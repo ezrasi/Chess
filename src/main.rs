@@ -7,6 +7,7 @@ mod perft;
 mod play;
 mod search;
 mod utils;
+mod hash;
 use crate::play::*;
 use crate::search::*;
 use crate::utils::*;

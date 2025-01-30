@@ -285,6 +285,7 @@ impl PartialEq for Board {
         self.black_rook == other.black_rook &&
         self.black_queen == other.black_queen &&
         self.black_king == other.black_king &&
+        self.turn == other.turn &&
         self.white_kingside_castle == other.white_kingside_castle &&
         self.white_queenside_castle == other.white_queenside_castle &&
         self.black_kingside_castle == other.black_kingside_castle &&
