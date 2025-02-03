@@ -64,10 +64,11 @@ pub fn play_game(board_param: &Board) {
 
                     if let Some(unwrapped) = best {
                         println!(
-                            "{} to {}",
+                            "{}{}",
                             index_to_square(unwrapped.from),
                             index_to_square(unwrapped.to)
                         );
+                        println!("Eval: {eval}");
                         board = make_move(&board, &unwrapped);
                         let (user_option, user_eval) = best_move(&board, 1);
                         if user_option.is_none() {
