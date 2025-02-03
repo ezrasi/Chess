@@ -2,9 +2,12 @@ use crate::eval::*;
 use crate::movegen::legal_moves;
 use crate::movegen::make_move;
 use crate::utils::*;
+use std::collections::HashMap;
 
 // still need to account for checkmate and stalemate
-pub fn best_move(board: &Board, depth: u8) -> (Option<Move>, f32) {
+pub fn best_move(
+    board: &Board,
+    depth: u8) -> (Option<Move>, f32) {
     let mut possibilities = legal_moves(board);
 
     // check for stalemate or checkmate
@@ -46,15 +49,26 @@ pub fn best_move(board: &Board, depth: u8) -> (Option<Move>, f32) {
 
     for ply in possibilities.iter() {
         let made_move = make_move(board, &ply);
-        // evaluations.push(best_move_helper(&made_move, depth - 1));
-        // CHANGE THE FOLLOWING LINE TODO
-        let evaluation = if board.turn {
-            (ab_min(&made_move, f32::NEG_INFINITY, f32::INFINITY, depth - 1))
-        } else {
-            ab_max(&made_move, f32::NEG_INFINITY, f32::INFINITY, depth - 1)
+                   // evaluations.push(best_move_helper(&made_move, depth - 1));
+            // CHANGE THE FOLLOWING LINE TODO
+            let evaluation = if board.turn {
+                (ab_min(
+                    &made_move,
+                    f32::NEG_INFINITY,
+                    f32::INFINITY,
+                    depth - 1,
+                                  ))
+            } else {
+                ab_max(
+                    &made_move,
+                    f32::NEG_INFINITY,
+                    f32::INFINITY,
+                    depth - 1,
+                                   )
+            
         };
         evaluations.push(evaluation);
-    }
+            }
 
     let mut best = if board.turn {
         f32::NEG_INFINITY
@@ -87,7 +101,11 @@ pub fn best_move(board: &Board, depth: u8) -> (Option<Move>, f32) {
     (Some(possibilities[i].clone()), best)
 }
 
-fn ab_max(board: &Board, mut alpha: f32, beta: f32, depth: u8) -> f32 {
+fn ab_max(
+    board: &Board,
+    mut alpha: f32,
+    beta: f32,
+    depth: u8) -> f32 {
     if depth == 0 {
         return eval(board);
     }
@@ -98,9 +116,14 @@ fn ab_max(board: &Board, mut alpha: f32, beta: f32, depth: u8) -> f32 {
     if possibilities.len() == 0 {
         return eval(board);
     }
+
     for ply in possibilities.into_iter() {
         let made_move = make_move(board, &ply);
-        let score = ab_min(&made_move, alpha, beta, depth - 1);
+
+        
+       
+          let  score = ab_min(&made_move, alpha, beta, depth - 1);
+        
         if score > best {
             best = score;
             if score > alpha {
@@ -110,10 +133,14 @@ fn ab_max(board: &Board, mut alpha: f32, beta: f32, depth: u8) -> f32 {
         if alpha >= beta {
             return beta;
         }
-    }
+            }
     best
 }
-fn ab_min(board: &Board, alpha: f32, mut beta: f32, depth: u8) -> f32 {
+fn ab_min(
+    board: &Board,
+    alpha: f32,
+    mut beta: f32,
+    depth: u8) -> f32 {
     if depth == 0 {
         return eval(board);
     }
@@ -124,9 +151,14 @@ fn ab_min(board: &Board, alpha: f32, mut beta: f32, depth: u8) -> f32 {
     if possibilities.len() == 0 {
         return eval(board);
     }
+
     for ply in possibilities.into_iter() {
         let made_move = make_move(board, &ply);
-        let score = ab_max(&made_move, alpha, beta, depth - 1);
+
+       
+    
+          let score = ab_max(&made_move, alpha, beta, depth - 1);
+        
         if score < best {
             best = score;
             if score < beta {
@@ -136,10 +168,10 @@ fn ab_min(board: &Board, alpha: f32, mut beta: f32, depth: u8) -> f32 {
         if beta <= alpha {
             return alpha;
         }
-    }
+           }
     best
 }
-
+/*
 fn best_move_helper(board: &Board, depth: u8) -> f32 {
     if depth == 0 {
         return eval(board);
@@ -177,17 +209,9 @@ fn best_move_helper(board: &Board, depth: u8) -> f32 {
 
     best
 }
-
+*/
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::utils::*;
-
-    #[test]
-    fn best_start() {
-        let board = starting_position();
-        let (best, eval) = best_move(&board, 5);
-        println!("Best: {:?}", best);
-        println!("Eval: {eval}");
-    }
 }

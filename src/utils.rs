@@ -283,7 +283,8 @@ pub struct Board {
 
 impl PartialEq for Board {
     fn eq(&self, other: &Self) -> bool {
-        self.white_pawn == other.white_pawn
+        self.white | self.black == other.white | other.black
+            && self.white_pawn == other.white_pawn
             && self.white_knight == other.white_knight
             && self.white_bishop == other.white_bishop
             && self.white_rook == other.white_rook

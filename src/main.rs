@@ -12,6 +12,7 @@ use crate::play::*;
 use crate::search::*;
 use crate::utils::*;
 use regex::Regex;
+use std::collections::HashMap;
 use std::io::{stdin, stdout, Write};
 use std::thread;
 
@@ -26,7 +27,6 @@ fn main() {
     }));
 
     let mut board = starting_position();
-
     loop {
         let mut command_string = String::new();
         stdin()
@@ -50,7 +50,7 @@ fn main() {
             println!("readyok");
         }
 
-        //finish implementing the actual position command.
+        //finish implementing the actual position command. remove line in play command
         let re = Regex::new(r"position (startpos|.+) moves (.*)").unwrap();
         if let Some(captures) = re.captures(command) {
             let move_list = &captures[2];
@@ -67,6 +67,8 @@ fn main() {
         }
 
         if command == "play" {
+            // remove following line when implemented position command
+            board = starting_position();
             play_game(&board);
         }
     }

@@ -1,4 +1,5 @@
 use crate::eval::*;
+use crate::hash::zobrist_hash;
 use crate::movegen::*;
 use crate::search::*;
 use crate::utils::*;
@@ -29,7 +30,7 @@ pub fn play_game(board_param: &Board) {
     // returns true if game is over
     let ending = |evaluation: f32, is_user: bool| {
         if evaluation == 0.0 {
-            println!("Stalemate");
+            println!("Draw bc no engine move");
         } else {
             println!("Checkmate.");
             if is_user {
@@ -39,6 +40,7 @@ pub fn play_game(board_param: &Board) {
             }
         }
     };
+
 
     if engine_color == 0 {
         println!("Type moves with format e2e4, d7d8q, e1g1 (castling). Good luck. You may begin.");
@@ -59,6 +61,7 @@ pub fn play_game(board_param: &Board) {
             if re.is_match(user_move.trim()) {
                 // make sure move is legal
                 if make_user_move(&user_move, &mut board) {
+
                     // now make engine move
                     let (best, eval) = best_move(&board, depth);
 
@@ -70,6 +73,7 @@ pub fn play_game(board_param: &Board) {
                         );
                         println!("Eval: {eval}");
                         board = make_move(&board, &unwrapped);
+
                         let (user_option, user_eval) = best_move(&board, 1);
                         if user_option.is_none() {
                             ending(eval, false);
